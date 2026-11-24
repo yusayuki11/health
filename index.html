@@ -88,10 +88,18 @@ main{padding:16px 0 40px}
 .field{display:flex;flex-direction:column;gap:5px;min-width:0}
 .field label{font-size:.8rem;color:var(--muted)}
 .field input,.field select,.field textarea{
-  border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;background:#fbfdfc;width:100%;min-height:44px;
+  border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;background:#fbfdfc;width:100%;min-width:0;max-width:100%;min-height:44px;
 }
 .field textarea{min-height:74px;resize:vertical}
 .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--primary)}
+/* 修复 iOS 日期/时间输入框内在宽度过大撑破容器 */
+input[type="date"],input[type="time"],input[type="datetime-local"]{
+  -webkit-appearance:none;appearance:none;display:block;min-width:0;max-width:100%;width:100%;
+}
+input[type="date"]::-webkit-date-and-time-value{min-width:0;max-width:100%;text-align:left}
+input[type="date"]::-webkit-calendar-picker-indicator{margin:0;padding:0;opacity:.6}
+.form-grid{grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr))}
+.daynav input[type="date"]{min-width:0;max-width:100%}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--primary);color:#fff;font-size:.95rem;font-weight:600;border-radius:10px;padding:11px 18px;min-height:44px;transition:background .15s}
 .btn:hover{background:var(--primary-dark)}
 .btn:disabled{opacity:.55;cursor:not-allowed}
@@ -181,6 +189,23 @@ main{padding:16px 0 40px}
 .eb-fill.intake{background:linear-gradient(90deg,#f08c2e,#f7b32b)}
 .eb-fill.burn{background:linear-gradient(90deg,#0e9f8a,#3cc9a7)}
 .eb-bar-val{font-size:.82rem;font-weight:600;width:70px;text-align:right;flex:none}
+/* SECTION: calendar */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal-cell{aspect-ratio:1;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:#f1f5f4;color:#9db1ad;min-width:0;cursor:pointer;padding:2px}
+.cal-cell.head{background:none;cursor:default;color:var(--muted);font-size:.72rem;aspect-ratio:auto;padding:2px 0}
+.cal-cell.part{background:#eaf6f2;color:#5b7a74}
+.cal-cell.both{background:#cdeee6;color:#1f2d2b}
+.cal-cell.today{outline:2px solid #f08c2e;outline-offset:-2px}
+.cal-cell.future{opacity:.4;cursor:default}
+.cal-day{font-size:.76rem;line-height:1.15}
+.cal-kg{font-size:.6rem;line-height:1.15;font-weight:700;display:flex;align-items:center;gap:1px}
+.cal-kg.up{color:#e05252}
+.cal-kg.down{color:#0e9f8a}
+.cal-arrow{font-size:.52rem}
+.cal-dot{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:middle;margin:0 4px 0 8px}
+.cal-dot.both{background:#cdeee6;border:1px solid #9fd0c4}
+.cal-dot.part{background:#eaf6f2;border:1px solid #cfe6df}
+.cal-dot.none{background:#f1f5f4;border:1px solid var(--line)}
 .ai-actions{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 /* SECTION: chart */
 .chart-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
@@ -513,6 +538,17 @@ footer{font-size:.74rem;color:#93a5a2;text-align:center;padding:8px 14px calc(26
   <!-- SECTION: tab-trend -->
   <section id="tab-trend" class="tabpane">
     <div class="card">
+      <h2>记录日历 <span class="badge" id="calMonthLabel"></span>
+        <span class="eb-nav">
+          <button class="navbtn" id="calPrev" aria-label="上个月">‹</button>
+          <button class="navbtn" id="calNext" aria-label="下个月">›</button>
+        </span>
+      </h2>
+      <div class="cal-grid" id="calGrid"></div>
+      <p class="hint" style="margin-top:10px"><span class="cal-dot both"></span>体重+饮食都记了<span class="cal-dot part"></span>记了一部分<span class="cal-dot none"></span>未记录 · 日期下为当日体重：红▲上涨 / 绿▼下降（对比上一次记录）· 点日期跳到当天饮食补记</p>
+    </div>
+
+    <div class="card">
       <h2>体重 / BMI 趋势</h2>
       <div class="chart-controls">
         <div class="seg" id="rangeSeg">
@@ -531,6 +567,20 @@ footer{font-size:.74rem;color:#93a5a2;text-align:center;padding:8px 14px calc(26
       </div>
       <div class="empty" id="chartEmpty" style="display:none"></div>
       <p class="chart-note"><span class="legend-band"></span>绿色底带为 BMI 正常范围 18.5–24（中国成人标准 WS/T 428-2013）。紫色虚线为体重 7 天移动平均，平滑水分波动，看真实趋势更准。触摸或悬停曲线可查看数值。</p>
+    </div>
+
+    <div class="card">
+      <h2>热量缺口趋势</h2>
+      <div class="chart-controls">
+        <div class="seg" id="defRangeSeg">
+          <button data-range="14">近14天</button>
+          <button data-range="30" class="on">近30天</button>
+          <button data-range="all">全部</button>
+        </div>
+      </div>
+      <div class="chart-box" id="defChartBox"><div class="chart-tip" id="defChartTip"></div></div>
+      <div class="empty" id="defChartEmpty" style="display:none"></div>
+      <p class="chart-note">绿柱 = 缺口（消耗 > 摄入），红柱 = 盈余；紫色虚线为缺口 7 天均线。只统计有饮食记录的日子，消耗采用校准后的数值。看均线方向，别盯单日。</p>
     </div>
   </section>
 
@@ -570,6 +620,16 @@ footer{font-size:.74rem;color:#93a5a2;text-align:center;padding:8px 14px calc(26
         <div class="field"><label for="setMacroFat">脂肪（g）</label><input id="setMacroFat" type="number" inputmode="decimal" min="0" max="500" step="1" placeholder="如 55"></div>
         <div class="field"><label for="setMacroCarb">碳水（g）</label><input id="setMacroCarb" type="number" inputmode="decimal" min="0" max="1000" step="1" placeholder="如 275"></div>
       </div>
+      <div class="form-grid" style="margin-top:10px">
+        <div class="field"><label for="setProteinMode">蛋白质目标模式</label>
+          <select id="setProteinMode">
+            <option value="fixed">固定克数</option>
+            <option value="perkg">按体重联动（g/kg）</option>
+          </select>
+        </div>
+        <div class="field"><label for="setProteinPerKg">每公斤体重（g/kg）</label><input id="setProteinPerKg" type="number" inputmode="decimal" min="0.8" max="2.2" step="0.1" placeholder="如 1.4"></div>
+      </div>
+      <p class="hint" id="proteinModeHint" style="margin-top:8px"></p>
       <div class="row" style="margin-top:12px">
         <button class="btn" id="btnSaveMacro">保存目标</button>
         <button class="btn ghost" id="btnMacroAuto">按热量目标估算</button>
@@ -703,7 +763,7 @@ var MEALS = [
 ];
 function defaultState(){
   return { heightCm:null, targetKcal:2000, goalKg:60, age:null, sex:'', activityFactor:1.2, apiKey:'', model:'qwen-plus', searchEnabled:false, weights:[], meals:[], activities:[], templates:[],
-    calibFactor:1, calibMeta:null, macroTargets:{ protein:75, fat:55, carb:275 } };
+    calibFactor:1, calibMeta:null, proteinMode:'fixed', proteinPerKg:1.4, macroTargets:{ protein:75, fat:55, carb:275 } };
 }
 function normMacros(t){
   var d = { protein:75, fat:55, carb:275 };
@@ -734,6 +794,8 @@ try{
       state.templates = Array.isArray(parsed.templates) ? parsed.templates.filter(function(t){ return t && typeof t.name === 'string' && Array.isArray(t.items); }) : [];
       state.calibFactor = typeof parsed.calibFactor === 'number' && parsed.calibFactor >= 0.7 && parsed.calibFactor <= 1.4 ? parsed.calibFactor : 1;
       state.calibMeta = parsed.calibMeta && typeof parsed.calibMeta === 'object' ? parsed.calibMeta : null;
+      state.proteinMode = parsed.proteinMode === 'perkg' ? 'perkg' : 'fixed';
+      state.proteinPerKg = typeof parsed.proteinPerKg === 'number' && parsed.proteinPerKg >= 0.8 && parsed.proteinPerKg <= 2.2 ? parsed.proteinPerKg : 1.4;
       state.macroTargets = normMacros(parsed.macroTargets);
     }
   }
@@ -742,7 +804,7 @@ function save(){
   try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
   catch(e){ toast('保存失败：浏览器存储不可用'); }
 }
-var ui = { dietDate: todayStr(), actDate: todayStr(), ebDate: todayStr(), range:'30', showW:true, showB:true, showMA:true };
+var ui = { dietDate: todayStr(), actDate: todayStr(), ebDate: todayStr(), range:'30', showW:true, showB:true, showMA:true, calMonth: todayStr().slice(0, 7), defRange:'30' };
 /* SECTION: bmi */
 function bmiOf(kg){
   if(!state.heightCm || state.heightCm <= 0) return null;
@@ -926,6 +988,169 @@ $('#btnCalibClear').addEventListener('click', function(){
   save(); renderEnergyCard(); renderCalib();
   toast('已清除校准');
 });
+/* SECTION: record-calendar */
+function shiftMonth(ym, delta){
+  var p = ym.split('-');
+  var d = new Date(+p[0], +p[1] - 1 + delta, 1);
+  return d.getFullYear() + '-' + pad2(d.getMonth() + 1);
+}
+function renderCalendar(){
+  var p = ui.calMonth.split('-');
+  var y = +p[0], mo = +p[1];
+  $('#calMonthLabel').textContent = y + ' 年 ' + mo + ' 月';
+  var grid = $('#calGrid'); grid.textContent = '';
+  ['一','二','三','四','五','六','日'].forEach(function(w){ grid.appendChild(h('div', 'cal-cell head', w)); });
+  var lead = (new Date(y, mo - 1, 1).getDay() + 6) % 7;
+  var days = new Date(y, mo, 0).getDate();
+  var wList = sortedWeights();
+  var wMap = {};
+  wList.forEach(function(w, i){ wMap[w.date] = { kg:w.kg, prev: i > 0 ? wList[i - 1].kg : null }; });
+  var mSet = {};
+  state.meals.forEach(function(m){ mSet[m.date] = 1; });
+  var today = todayStr();
+  for(var i = 0; i < lead; i++) grid.appendChild(h('div', 'cal-cell head', ''));
+  for(var d = 1; d <= days; d++){
+    var ds = ui.calMonth + '-' + pad2(d);
+    var rec = wMap[ds], hasM = !!mSet[ds];
+    var cls = 'cal-cell' + (rec && hasM ? ' both' : (rec || hasM ? ' part' : '')) + (ds === today ? ' today' : '') + (ds > today ? ' future' : '');
+    var cell = h('div', cls);
+    cell.dataset.date = ds;
+    cell.appendChild(h('span', 'cal-day', String(d)));
+    if(rec){
+      var dir = rec.prev === null ? '' : (rec.kg > rec.prev ? ' up' : (rec.kg < rec.prev ? ' down' : ''));
+      var kgEl = h('span', 'cal-kg' + dir);
+      kgEl.appendChild(document.createTextNode(rec.kg.toFixed(1)));
+      if(dir === ' up') kgEl.appendChild(h('span', 'cal-arrow', '▲'));
+      if(dir === ' down') kgEl.appendChild(h('span', 'cal-arrow', '▼'));
+      cell.appendChild(kgEl);
+    }
+    grid.appendChild(cell);
+  }
+}
+$('#calPrev').addEventListener('click', function(){ ui.calMonth = shiftMonth(ui.calMonth, -1); renderCalendar(); });
+$('#calNext').addEventListener('click', function(){ ui.calMonth = shiftMonth(ui.calMonth, 1); renderCalendar(); });
+$('#calGrid').addEventListener('click', function(e){
+  var cell = e.target.closest('.cal-cell');
+  if(!cell || !cell.dataset.date || cell.classList.contains('future')) return;
+  ui.dietDate = cell.dataset.date;
+  document.querySelector('#tabs .tab[data-tab="diet"]').click();
+  renderDiet();
+});
+/* SECTION: deficit-chart */
+var defGeom = null;
+function deficitSeries(){
+  var set = {};
+  state.meals.forEach(function(m){ set[m.date] = 1; });
+  var dates = Object.keys(set).sort();
+  if(ui.defRange !== 'all'){
+    var cutoff = shiftDate(todayStr(), -(ui.defRange === '14' ? 13 : 29));
+    dates = dates.filter(function(d){ return d >= cutoff; });
+  }
+  var out = [];
+  dates.forEach(function(d){
+    var eb = energyOfDay(d);
+    if(eb.ready) out.push({ date:d, deficit:eb.deficit, intake:eb.intake, total:eb.total });
+  });
+  return out;
+}
+function drawDeficitChart(){
+  var box = $('#defChartBox'); var tip = $('#defChartTip');
+  box.querySelectorAll('svg').forEach(function(s){ s.remove(); });
+  tip.style.display = 'none';
+  var empty = $('#defChartEmpty');
+  if(!state.age || !state.sex || !state.heightCm){
+    empty.style.display = 'block';
+    empty.textContent = '先到「设置」填写年龄、性别和身高，才能计算缺口趋势。';
+    defGeom = null; return;
+  }
+  var data = deficitSeries();
+  if(!data.length){
+    empty.style.display = 'block';
+    empty.textContent = '该范围内还没有饮食记录。';
+    defGeom = null; return;
+  }
+  empty.style.display = 'none';
+  var maVals = data.map(function(d){
+    var win = data.filter(function(x){ return x.date <= d.date && x.date >= shiftDate(d.date, -6); });
+    return win.reduce(function(s,x){ return s + x.deficit; }, 0) / win.length;
+  });
+  var W = 800, H = 300, padL = 54, padR = 16, padT = 16, padB = 40;
+  var plotW = W - padL - padR, plotH = H - padT - padB;
+  var n = data.length;
+  var vals = data.map(function(d){ return d.deficit; }).concat(maVals).concat([0]);
+  var sc = scaleOf(vals);
+  function y(v){ return padT + plotH - (v - sc.min) / (sc.max - sc.min) * plotH; }
+  var xs = data.map(function(_, i){ return n === 1 ? padL + plotW / 2 : padL + (i + 0.5) * plotW / n; });
+  var svg = svgEl('svg', { viewBox:'0 0 ' + W + ' ' + H, role:'img' });
+  svg.setAttribute('aria-label', '热量缺口趋势图');
+  var ticks = Math.round((sc.max - sc.min) / sc.step);
+  for(var t = 0; t <= ticks; t++){
+    var v = sc.min + t * sc.step; var yy = y(v);
+    svg.appendChild(svgEl('line', { x1:padL, x2:padL + plotW, y1:yy, y2:yy, stroke:'#e6edeb' }));
+    var lb = svgEl('text', { x:padL - 8, y:yy + 4, 'text-anchor':'end', 'font-size':12, fill:'#8aa09c' });
+    lb.textContent = Math.round(v);
+    svg.appendChild(lb);
+  }
+  svg.appendChild(svgEl('line', { x1:padL, x2:padL + plotW, y1:y(0), y2:y(0), stroke:'#b9c9c6', 'stroke-width':1.5 }));
+  var bw = Math.max(3, plotW / n * 0.6);
+  data.forEach(function(d, i){
+    var y0 = y(0), y1 = y(d.deficit);
+    var top = Math.min(y0, y1), hh = Math.max(1, Math.abs(y1 - y0));
+    svg.appendChild(svgEl('rect', { x:xs[i] - bw / 2, y:top, width:bw, height:hh, rx:2, fill:d.deficit >= 0 ? '#0e9f8a' : '#e05252', opacity:.85 }));
+  });
+  if(n > 1){
+    var pts = maVals.map(function(v, i){ return xs[i] + ',' + y(v); }).join(' ');
+    svg.appendChild(svgEl('polyline', { points:pts, fill:'none', stroke:'#a06cc9', 'stroke-width':2, 'stroke-dasharray':'6 4' }));
+  }
+  var every = Math.max(1, Math.ceil(n / 6));
+  data.forEach(function(d, i){
+    if(i % every !== 0 && i !== n - 1) return;
+    var xt = svgEl('text', { x:xs[i], y:H - 14, 'text-anchor':'middle', 'font-size':12, fill:'#8aa09c' });
+    xt.textContent = mdLabel(d.date);
+    svg.appendChild(xt);
+  });
+  var guide = svgEl('line', { x1:0, x2:0, y1:padT, y2:padT + plotH, stroke:'#b9c9c6', 'stroke-dasharray':'3 3', visibility:'hidden' });
+  svg.appendChild(guide);
+  box.insertBefore(svg, tip);
+  defGeom = { data:data, maVals:maVals, xs:xs, W:W, padL:padL, plotW:plotW, n:n, guide:guide, svg:svg };
+}
+function defPointer(evt){
+  if(!defGeom) return;
+  var g = defGeom;
+  var rect = g.svg.getBoundingClientRect();
+  var px = (evt.clientX - rect.left) / rect.width * g.W;
+  var idx = g.n === 1 ? 0 : clampNum(Math.floor((px - g.padL) / (g.plotW / g.n)), 0, g.n - 1);
+  var d = g.data[idx];
+  g.guide.setAttribute('x1', g.xs[idx]);
+  g.guide.setAttribute('x2', g.xs[idx]);
+  g.guide.setAttribute('visibility', 'visible');
+  var tip = $('#defChartTip'); tip.textContent = '';
+  tip.appendChild(h('div', 'd', d.date));
+  tip.appendChild(h('div', null, (d.deficit >= 0 ? '缺口 +' : '盈余 ') + Math.round(d.deficit) + ' 千卡'));
+  tip.appendChild(h('div', null, '7日均 ' + (g.maVals[idx] >= 0 ? '+' : '') + Math.round(g.maVals[idx]) + ' 千卡'));
+  tip.appendChild(h('div', null, '摄入 ' + Math.round(d.intake) + ' · 消耗 ' + Math.round(d.total)));
+  tip.style.display = 'block';
+  var boxRect = $('#defChartBox').getBoundingClientRect();
+  var left = evt.clientX - boxRect.left + 14, top = evt.clientY - boxRect.top - 10;
+  if(left + tip.offsetWidth > boxRect.width - 4) left = evt.clientX - boxRect.left - tip.offsetWidth - 14;
+  if(left < 0) left = 4;
+  if(top < 0) top = 4;
+  tip.style.left = left + 'px';
+  tip.style.top = top + 'px';
+}
+$('#defChartBox').addEventListener('pointermove', defPointer);
+$('#defChartBox').addEventListener('pointerdown', defPointer);
+$('#defChartBox').addEventListener('pointerleave', function(){
+  $('#defChartTip').style.display = 'none';
+  if(defGeom) defGeom.guide.setAttribute('visibility', 'hidden');
+});
+$('#defRangeSeg').addEventListener('click', function(e){
+  var btn = e.target.closest('button');
+  if(!btn) return;
+  ui.defRange = btn.dataset.range;
+  this.querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', b === btn); });
+  drawDeficitChart();
+});
 /* SECTION: tabs */
 var tabBtns = document.querySelectorAll('#tabs .tab');
 tabBtns.forEach(function(btn){
@@ -933,7 +1158,7 @@ tabBtns.forEach(function(btn){
     tabBtns.forEach(function(b){ b.classList.toggle('active', b === btn); });
     document.querySelectorAll('.tabpane').forEach(function(p){ p.classList.remove('active'); });
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-    if(btn.dataset.tab === 'trend') drawChart();
+    if(btn.dataset.tab === 'trend'){ drawChart(); drawDeficitChart(); }
     if(btn.dataset.tab === 'settings') fillSettings();
     if(btn.dataset.tab === 'weight') $('#inHeight').value = state.heightCm || '';
     if(btn.dataset.tab === 'activity'){ renderActivity(); updateActEst(); }
@@ -983,6 +1208,8 @@ function renderWeight(){
   renderCountdown();
   renderEnergyCard();
   renderCalib();
+  renderCalendar();
+  drawDeficitChart();
 }
 /* SECTION: countdown */
 function renderCountdown(){
@@ -1111,6 +1338,8 @@ function renderDiet(){
   renderRings();
   renderEnergyCard();
   renderTemplates();
+  renderCalendar();
+  drawDeficitChart();
 }
 /* SECTION: macro-rings */
 function macroTotalsOf(date){
@@ -1123,9 +1352,16 @@ function macroTotalsOf(date){
   });
   return t;
 }
+function proteinTarget(){
+  if(state.proteinMode === 'perkg'){
+    var kg = latestKg();
+    if(kg) return Math.round(kg * (state.proteinPerKg || 1.4));
+  }
+  return state.macroTargets.protein;
+}
 function renderRings(){
   var got = macroTotalsOf(ui.dietDate);
-  var tg = state.macroTargets;
+  var tg = { protein: proteinTarget(), fat: state.macroTargets.fat, carb: state.macroTargets.carb };
   var r1 = function(x){ return Math.round(x * 10) / 10; };
   var defs = [
     { key:'protein', ring:'ringProtein', val:'ringProteinVal', pct:'ringProteinPct', r:84 },
@@ -1799,6 +2035,9 @@ function fillSettings(){
   $('#setMacroProtein').value = state.macroTargets.protein;
   $('#setMacroFat').value = state.macroTargets.fat;
   $('#setMacroCarb').value = state.macroTargets.carb;
+  $('#setProteinMode').value = state.proteinMode || 'fixed';
+  $('#setProteinPerKg').value = state.proteinPerKg || 1.4;
+  updateProteinModeUI();
   $('#setKey').value = state.apiKey;
   $('#setModel').value = state.model;
   $('#setSearch').checked = state.searchEnabled;
@@ -1829,16 +2068,36 @@ function readMacroInputs(){
     carb: parseFloat($('#setMacroCarb').value)
   };
 }
+function updateProteinModeUI(){
+  var perkg = $('#setProteinMode').value === 'perkg';
+  $('#setMacroProtein').disabled = perkg;
+  var hint = $('#proteinModeHint');
+  if(perkg){
+    var kg = latestKg();
+    var per = parseFloat($('#setProteinPerKg').value) || 1.4;
+    hint.textContent = kg
+      ? ('当前蛋白质目标 = 最新体重 ' + kg.toFixed(1) + ' kg × ' + per + ' g/kg ≈ ' + Math.round(kg * per) + ' g，随体重自动更新。减重保肌肉建议 1.2–1.6 g/kg。')
+      : '按体重联动：暂无体重记录，先记录体重；目标 = 体重 × 每公斤克数（减重保肌肉建议 1.2–1.6 g/kg）。';
+  }else{
+    hint.textContent = '';
+  }
+}
+$('#setProteinMode').addEventListener('change', updateProteinModeUI);
+$('#setProteinPerKg').addEventListener('input', updateProteinModeUI);
 $('#btnSaveMacro').addEventListener('click', function(){
   var v = readMacroInputs();
   var bad = ['protein','fat','carb'].some(function(k){ return isNaN(v[k]) || v[k] < 0 || v[k] > 1000; });
   if(bad){ toast('请输入 0–1000 之间的克数'); return; }
+  var per = parseFloat($('#setProteinPerKg').value);
+  if($('#setProteinMode').value === 'perkg' && (isNaN(per) || per < 0.8 || per > 2.2)){ toast('每公斤体重请输入 0.8–2.2 g'); return; }
   state.macroTargets = {
     protein: Math.round(v.protein * 10) / 10,
     fat: Math.round(v.fat * 10) / 10,
     carb: Math.round(v.carb * 10) / 10
   };
-  save(); renderDiet(); toast('营养素目标已保存');
+  state.proteinMode = $('#setProteinMode').value;
+  state.proteinPerKg = isNaN(per) ? 1.4 : Math.round(per * 10) / 10;
+  save(); renderDiet(); updateProteinModeUI(); toast('营养素目标已保存');
 });
 $('#btnMacroAuto').addEventListener('click', function(){
   var t = state.targetKcal;
@@ -1900,6 +2159,8 @@ $('#fileImport').addEventListener('change', function(){
         .map(function(t){ return { id:t.id || uid(), name:t.name, meal:t.meal || 'breakfast', items:t.items }; }) : [];
       state.calibFactor = typeof obj.calibFactor === 'number' && obj.calibFactor >= 0.7 && obj.calibFactor <= 1.4 ? obj.calibFactor : 1;
       state.calibMeta = obj.calibMeta && typeof obj.calibMeta === 'object' ? obj.calibMeta : null;
+      state.proteinMode = obj.proteinMode === 'perkg' ? 'perkg' : 'fixed';
+      state.proteinPerKg = typeof obj.proteinPerKg === 'number' && obj.proteinPerKg >= 0.8 && obj.proteinPerKg <= 2.2 ? obj.proteinPerKg : 1.4;
       state.macroTargets = normMacros(obj.macroTargets);
       save(); renderWeight(); renderDiet(); renderActivity(); drawChart(); fillSettings(); refreshAiBadge();
       $('#inHeight').value = state.heightCm || '';
