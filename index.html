@@ -219,6 +219,7 @@ footer{font-size:.74rem;color:#93a5a2;text-align:center;padding:8px 14px calc(26
   <nav class="tabs wrap" id="tabs">
     <button class="tab active" data-tab="weight"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 9a4 4 0 0 1 8 0"/><path d="M12 9l1.8-2.2"/></svg>体重</button>
     <button class="tab" data-tab="diet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 3v8a2 2 0 0 0 2 2v8"/><path d="M9 3v8a2 2 0 0 1-2 2"/><path d="M7 3v5"/><path d="M17 3c-2 2-2.5 5-2.5 8H17v10"/></svg>饮食</button>
+    <button class="tab" data-tab="activity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>活动</button>
     <button class="tab" data-tab="trend"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M4 15l5-5 4 3 7-8"/></svg>趋势</button>
     <button class="tab" data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14.2 3h-4l-.4 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2l.4 2.7h4l.4-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg>设置</button>
   </nav>
@@ -378,6 +379,65 @@ footer{font-size:.74rem;color:#93a5a2;text-align:center;padding:8px 14px calc(26
     </div>
   </section>
 
+  <!-- SECTION: tab-activity -->
+  <section id="tab-activity" class="tabpane">
+    <div class="card">
+      <div class="daynav">
+        <button class="navbtn" id="btnActPrev" aria-label="前一天">‹</button>
+        <input type="date" id="inActDate">
+        <button class="navbtn" id="btnActNext" aria-label="后一天">›</button>
+        <button class="btn ghost small" id="btnActToday">今天</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="kcal-summary">
+        <span class="big" id="actTotal">0</span>
+        <span class="target">千卡 · 当日活动消耗</span>
+      </div>
+      <p class="hint" id="actBalance" style="margin-top:8px"></p>
+    </div>
+
+    <div class="card">
+      <h2>记录活动</h2>
+      <div class="form-grid">
+        <div class="field"><label for="selActivity">活动类型</label>
+          <select id="selActivity">
+            <option value="散步" data-met="2.8">散步（约3km/h）</option>
+            <option value="快走" data-met="4.3" selected>快走（约5.5km/h）</option>
+            <option value="慢跑" data-met="8.3">慢跑（约8km/h）</option>
+            <option value="跑步" data-met="10">跑步（约10km/h）</option>
+            <option value="骑车" data-met="6">骑车（中等速度）</option>
+            <option value="游泳" data-met="6">游泳（慢速）</option>
+            <option value="跳绳" data-met="10">跳绳（中等速度）</option>
+            <option value="爬楼梯" data-met="8">爬楼梯</option>
+            <option value="力量训练" data-met="5">力量训练</option>
+            <option value="瑜伽" data-met="2.5">瑜伽</option>
+            <option value="广场舞" data-met="5.5">广场舞 / 健身操</option>
+            <option value="家务" data-met="2.5">家务劳动</option>
+            <option value="羽毛球" data-met="4.5">羽毛球（休闲）</option>
+            <option value="篮球" data-met="6.5">篮球（一般）</option>
+            <option value="徒步" data-met="6">徒步 / 登山</option>
+            <option value="太极" data-met="3">太极拳</option>
+            <option value="椭圆机" data-met="5">椭圆机</option>
+            <option value="custom" data-met="">自定义活动…</option>
+          </select>
+        </div>
+        <div class="field"><label for="inActMin">时长（分钟）</label><input id="inActMin" type="number" inputmode="numeric" min="1" max="1440" step="1" placeholder="如 30"></div>
+        <div class="field"><label for="inActKcal">消耗热量（千卡）</label><input id="inActKcal" type="number" inputmode="numeric" min="0" max="5000" step="1" placeholder="自动估算或手填"></div>
+        <div class="field"><label for="inActName">名称（可修改）</label><input id="inActName" type="text" value="快走" placeholder="如 快走"></div>
+        <div class="field"><label>&nbsp;</label><button class="btn block" id="btnAddAct">记录</button></div>
+      </div>
+      <p class="hint" id="actEstHint" style="margin-top:10px"></p>
+    </div>
+
+    <div class="card">
+      <h2>当日活动明细 <span class="badge" id="actCount">0 条</span></h2>
+      <div class="rec-list" id="actList"></div>
+      <div class="empty" id="actEmpty">还没有活动记录，动一动再来记吧。</div>
+    </div>
+  </section>
+
   <!-- SECTION: tab-trend -->
   <section id="tab-trend" class="tabpane">
     <div class="card">
@@ -469,7 +529,7 @@ footer{font-size:.74rem;color:#93a5a2;text-align:center;padding:8px 14px calc(26
 
     <div class="card">
       <h2>说明</h2>
-      <p class="hint">· BMI = 体重(kg) ÷ 身高(m)²，分类依据国家卫生行业标准《成人体重判定》（WS/T 428-2013）：&lt;18.5 偏瘦，18.5–&lt;24 正常，24–&lt;28 超重，≥28 肥胖。适用于 18 岁及以上普通成人，孕妇、儿童青少年、肌肉量极高的运动员不适用。<br>· 内置食物库热量为每 100 克/毫升参考值折算的常见份量估算；AI 估算同样仅供参考，实际热量受烹饪方式、用油量等影响。<br>· 本工具用于日常记录参考，不构成医疗建议。</p>
+      <p class="hint">· BMI = 体重(kg) ÷ 身高(m)²，分类依据国家卫生行业标准《成人体重判定》（WS/T 428-2013）：&lt;18.5 偏瘦，18.5–&lt;24 正常，24–&lt;28 超重，≥28 肥胖。适用于 18 岁及以上普通成人，孕妇、儿童青少年、肌肉量极高的运动员不适用。<br>· 内置食物库热量为每 100 克/毫升参考值折算的常见份量估算；AI 估算同样仅供参考，实际热量受烹饪方式、用油量等影响。<br>· 活动消耗按 MET × 体重(kg) × 时长(小时) 估算，MET 参考《健康成年人身体活动能量消耗参考值》（T/CSSS 002—2023）等公开系数；结果含同时段基础消耗，自定义活动建议以手环/手表数据为准。<br>· 本工具用于日常记录参考，不构成医疗建议。</p>
     </div>
   </section>
 
@@ -550,7 +610,7 @@ var MEALS = [
   { key:'snack', label:'加餐', color:'#a06cc9' }
 ];
 function defaultState(){
-  return { heightCm:null, targetKcal:2000, goalKg:60, apiKey:'', model:'qwen-plus', weights:[], meals:[],
+  return { heightCm:null, targetKcal:2000, goalKg:60, apiKey:'', model:'qwen-plus', weights:[], meals:[], activities:[],
     macroTargets:{ protein:75, fat:55, carb:275 } };
 }
 function normMacros(t){
@@ -574,6 +634,7 @@ try{
       state.model = typeof parsed.model === 'string' ? parsed.model : 'qwen-plus';
       state.weights = Array.isArray(parsed.weights) ? parsed.weights.filter(function(w){ return w && typeof w.date === 'string' && typeof w.kg === 'number'; }) : [];
       state.meals = Array.isArray(parsed.meals) ? parsed.meals.filter(function(m){ return m && typeof m.date === 'string' && typeof m.kcal === 'number' && typeof m.name === 'string'; }) : [];
+      state.activities = Array.isArray(parsed.activities) ? parsed.activities.filter(function(a){ return a && typeof a.date === 'string' && typeof a.kcal === 'number' && typeof a.name === 'string'; }) : [];
       state.macroTargets = normMacros(parsed.macroTargets);
     }
   }
@@ -582,7 +643,7 @@ function save(){
   try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
   catch(e){ toast('保存失败：浏览器存储不可用'); }
 }
-var ui = { dietDate: todayStr(), range:'30', showW:true, showB:true };
+var ui = { dietDate: todayStr(), actDate: todayStr(), range:'30', showW:true, showB:true };
 /* SECTION: bmi */
 function bmiOf(kg){
   if(!state.heightCm || state.heightCm <= 0) return null;
@@ -608,6 +669,7 @@ tabBtns.forEach(function(btn){
     if(btn.dataset.tab === 'trend') drawChart();
     if(btn.dataset.tab === 'settings') fillSettings();
     if(btn.dataset.tab === 'weight') $('#inHeight').value = state.heightCm || '';
+    if(btn.dataset.tab === 'activity'){ renderActivity(); updateActEst(); }
   });
 });
 /* SECTION: weight-render */
@@ -748,6 +810,10 @@ function renderDiet(){
     c.appendChild(h('b', null, Math.round(mealSum(ui.dietDate, m.key)) + ' 千卡'));
     chips.appendChild(c);
   });
+  var ac = h('span', 'meal-chip');
+  ac.appendChild(document.createTextNode('活动消耗 '));
+  ac.appendChild(h('b', null, Math.round(actTotalOf(ui.dietDate)) + ' 千卡'));
+  chips.appendChild(ac);
   var secBox = $('#mealSections'); secBox.textContent = '';
   MEALS.forEach(function(m){
     var node = clone('tplMealSec');
@@ -808,6 +874,74 @@ function renderRings(){
   document.getElementById('ringKcal').textContent = Math.round(got.kcal);
   document.getElementById('ringDateBadge').textContent = mdLabel(ui.dietDate);
 }
+/* SECTION: activity */
+function activitiesOf(date){ return state.activities.filter(function(a){ return a.date === date; }); }
+function latestKg(){ var l = sortedWeights(); return l.length ? l[l.length - 1].kg : null; }
+function actTotalOf(date){ return activitiesOf(date).reduce(function(s,a){ return s + a.kcal; }, 0); }
+function updateActEst(){
+  var sel = $('#selActivity');
+  var opt = sel.options[sel.selectedIndex];
+  var met = parseFloat(opt.dataset.met);
+  var min = parseFloat($('#inActMin').value);
+  var kg = latestKg();
+  var hint = $('#actEstHint');
+  if(!isFinite(met)){ hint.textContent = '自定义活动：请手动填写消耗热量（可参考手环 / 手表 / 器械给出的数值）。'; return; }
+  if(!(min > 0)){ hint.textContent = '填写时长后自动估算消耗。公式：MET × 体重(kg) × 时长(小时)，MET 参考《健康成年人身体活动能量消耗参考值》。'; return; }
+  if(!kg){ hint.textContent = '还没有体重记录：先到「体重」页记一条即可自动估算，或直接手动填写热量。'; return; }
+  var kcal = Math.round(met * kg * min / 60);
+  $('#inActKcal').value = kcal;
+  hint.textContent = '按 MET ' + met + ' × ' + kg + ' kg × ' + min + ' 分钟估算 ≈ ' + kcal + ' 千卡，可手动修改。估算含同时段基础消耗，仅供参考。';
+}
+function renderActivity(){
+  $('#inActDate').value = ui.actDate;
+  var list = activitiesOf(ui.actDate);
+  var total = actTotalOf(ui.actDate);
+  $('#actTotal').textContent = Math.round(total);
+  $('#actCount').textContent = list.length + ' 条';
+  var intake = mealsOf(ui.actDate).reduce(function(s,m){ return s + m.kcal; }, 0);
+  $('#actBalance').textContent = '当日摄入 ' + Math.round(intake) + ' 千卡 · 摄入 − 活动消耗 = ' + Math.round(intake - total) + ' 千卡（未含基础代谢，仅供参考）';
+  var box = $('#actList'); box.textContent = '';
+  $('#actEmpty').style.display = list.length ? 'none' : 'block';
+  list.forEach(function(a){
+    var row = h('div', 'rec');
+    var main = h('span', 'main');
+    var nm = h('span', 'kg', a.name); nm.style.fontSize = '.92rem'; nm.style.fontWeight = '600';
+    main.appendChild(nm);
+    main.appendChild(h('span', 'bmi', (a.minutes ? a.minutes + ' 分钟 · ' : '') + Math.round(a.kcal) + ' 千卡'));
+    row.appendChild(main);
+    var del = h('button', 'del', '×'); del.title = '删除'; del.dataset.id = a.id;
+    row.appendChild(del);
+    box.appendChild(row);
+  });
+}
+$('#actList').addEventListener('click', function(e){
+  var btn = e.target.closest('.del');
+  if(!btn) return;
+  state.activities = state.activities.filter(function(a){ return a.id !== btn.dataset.id; });
+  save(); renderActivity(); renderDiet(); toast('已删除');
+});
+function setActDate(d){ ui.actDate = d; renderActivity(); }
+$('#btnActPrev').addEventListener('click', function(){ setActDate(shiftDate(ui.actDate, -1)); });
+$('#btnActNext').addEventListener('click', function(){ setActDate(shiftDate(ui.actDate, 1)); });
+$('#btnActToday').addEventListener('click', function(){ setActDate(todayStr()); });
+$('#inActDate').addEventListener('change', function(){ if(this.value) setActDate(this.value); });
+$('#selActivity').addEventListener('change', function(){
+  var opt = this.options[this.selectedIndex];
+  $('#inActName').value = opt.value === 'custom' ? '' : opt.value;
+  updateActEst();
+});
+$('#inActMin').addEventListener('input', updateActEst);
+$('#btnAddAct').addEventListener('click', function(){
+  var name = $('#inActName').value.trim();
+  var kcal = parseFloat($('#inActKcal').value);
+  var min = parseFloat($('#inActMin').value);
+  if(!name){ toast('请填写活动名称'); return; }
+  if(isNaN(kcal) || kcal <= 0 || kcal > 5000){ toast('热量请输入 1–5000 千卡（填时长可自动估算）'); return; }
+  state.activities.push({ id:uid(), date:ui.actDate, name:name, minutes:(min > 0 ? Math.round(min) : 0), kcal:Math.round(kcal) });
+  save(); renderActivity(); renderDiet();
+  $('#inActMin').value = ''; $('#inActKcal').value = '';
+  toast('已记录 ' + name + ' ' + Math.round(kcal) + ' 千卡');
+});
 $('#mealSections').addEventListener('click', function(e){
   var btn = e.target.closest('.del');
   if(!btn) return;
@@ -1381,8 +1515,10 @@ $('#fileImport').addEventListener('change', function(){
       state.meals = obj.meals.filter(function(m){ return m && typeof m.date === 'string' && typeof m.kcal === 'number' && typeof m.name === 'string'; })
         .map(function(m){ return { id:m.id || uid(), date:m.date, meal:m.meal || 'snack', name:m.name, kcal:m.kcal,
           protein:+m.protein || 0, fat:+m.fat || 0, carb:+m.carb || 0 }; });
+      state.activities = Array.isArray(obj.activities) ? obj.activities.filter(function(a){ return a && typeof a.date === 'string' && typeof a.kcal === 'number' && typeof a.name === 'string'; })
+        .map(function(a){ return { id:a.id || uid(), date:a.date, name:a.name, minutes:+a.minutes || 0, kcal:a.kcal }; }) : [];
       state.macroTargets = normMacros(obj.macroTargets);
-      save(); renderWeight(); renderDiet(); drawChart(); fillSettings(); refreshAiBadge();
+      save(); renderWeight(); renderDiet(); renderActivity(); drawChart(); fillSettings(); refreshAiBadge();
       $('#inHeight').value = state.heightCm || '';
       toast('导入成功');
     }catch(e){ toast('导入失败：文件格式不正确'); }
@@ -1392,7 +1528,7 @@ $('#fileImport').addEventListener('change', function(){
 $('#btnClear').addEventListener('click', function(){
   if(!confirm('将删除全部体重、饮食记录及设置（含 API Key），且无法恢复。建议先导出备份。确定清空？')) return;
   state = defaultState();
-  save(); renderWeight(); renderDiet(); drawChart(); fillSettings(); refreshAiBadge();
+  save(); renderWeight(); renderDiet(); renderActivity(); drawChart(); fillSettings(); refreshAiBadge();
   $('#inHeight').value = '';
   $('#inGoalKg').value = state.goalKg;
   toast('已清空全部数据');
@@ -1516,7 +1652,7 @@ function buildXlsx(sheets){
   return zipStore(files);
 }
 function exportXlsx(){
-  if(!state.weights.length && !state.meals.length){ toast('暂无数据可导出，先记录体重或饮食吧'); return; }
+  if(!state.weights.length && !state.meals.length && !state.activities.length){ toast('暂无数据可导出，先记录体重、饮食或活动吧'); return; }
   var mealOrder = {};
   MEALS.forEach(function(m, i){ mealOrder[m.key] = i; });
   var mealLabel = {};
@@ -1537,10 +1673,14 @@ function exportXlsx(){
     mRows.push([m.date, mealLabel[m.meal] || m.meal, m.name, Math.round(m.kcal),
       r1(m.protein || 0), r1(m.fat || 0), r1(m.carb || 0)]);
   });
+  /* 工作表3：活动消耗 */
+  var aRows = [['日期', '活动', '时长(分钟)', '消耗热量(千卡)']];
+  state.activities.slice().sort(function(a, b){ return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); })
+    .forEach(function(a){ aRows.push([a.date, a.name, a.minutes || '', Math.round(a.kcal)]); });
   /* 工作表3：每日汇总 */
   var dayMap = {};
   function daySlot(date){
-    if(!dayMap[date]) dayMap[date] = { kg:null, meals:{}, protein:0, fat:0, carb:0 };
+    if(!dayMap[date]) dayMap[date] = { kg:null, meals:{}, protein:0, fat:0, carb:0, act:0 };
     return dayMap[date];
   }
   state.weights.forEach(function(w){ daySlot(w.date).kg = w.kg; });
@@ -1551,7 +1691,8 @@ function exportXlsx(){
     d.fat += (m.fat || 0);
     d.carb += (m.carb || 0);
   });
-  var dRows = [['日期', '体重(kg)', 'BMI', '早餐(千卡)', '午餐(千卡)', '晚餐(千卡)', '加餐(千卡)', '总热量(千卡)', '蛋白质(g)', '脂肪(g)', '碳水(g)', '热量目标(千卡)']];
+  state.activities.forEach(function(a){ daySlot(a.date).act += a.kcal; });
+  var dRows = [['日期', '体重(kg)', 'BMI', '早餐(千卡)', '午餐(千卡)', '晚餐(千卡)', '加餐(千卡)', '总热量(千卡)', '活动消耗(千卡)', '蛋白质(g)', '脂肪(g)', '碳水(g)', '热量目标(千卡)']];
   Object.keys(dayMap).sort().forEach(function(date){
     var d = dayMap[date];
     var b = d.kg !== null ? bmiOf(d.kg) : null;
@@ -1559,11 +1700,12 @@ function exportXlsx(){
     var total = MEALS.reduce(function(s, m){ return s + (d.meals[m.key] || 0); }, 0);
     dRows.push([date, d.kg !== null ? d.kg : '', b ? Math.round(b * 10) / 10 : '']
       .concat(sums)
-      .concat([total ? Math.round(total) : '', r1(d.protein), r1(d.fat), r1(d.carb), state.targetKcal || '']));
+      .concat([total ? Math.round(total) : '', d.act ? Math.round(d.act) : '', r1(d.protein), r1(d.fat), r1(d.carb), state.targetKcal || '']));
   });
   var blob = buildXlsx([
     { name:'体重记录', rows:wRows },
     { name:'饮食明细', rows:mRows },
+    { name:'活动消耗', rows:aRows },
     { name:'每日汇总', rows:dRows }
   ]);
   var url = URL.createObjectURL(blob);
@@ -1572,7 +1714,7 @@ function exportXlsx(){
   a.download = '体重热量数据-' + todayStr() + '.xlsx';
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(function(){ URL.revokeObjectURL(url); }, 3000);
-  toast('已导出 Excel（体重记录 / 饮食明细 / 每日汇总）');
+  toast('已导出 Excel（体重 / 饮食 / 活动 / 每日汇总）');
 }
 $('#btnExportXlsx').addEventListener('click', exportXlsx);
 /* SECTION: init */
@@ -1583,6 +1725,8 @@ $('#selManualMeal').value = defaultMealByTime();
 refreshAiBadge();
 renderWeight();
 renderDiet();
+renderActivity();
+updateActEst();
 fillSettings();
 drawChart();
 </script>
