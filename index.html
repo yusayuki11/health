@@ -353,7 +353,7 @@ footer{font-size:.74rem;color:#93a5a2;text-align:center;padding:8px 14px calc(26
       <div class="form-grid">
         <div class="field"><label for="inHeight">身高（cm）</label><input id="inHeight" type="number" inputmode="decimal" min="80" max="250" step="0.1" placeholder="如 170"></div>
         <div class="field"><label for="inWDate">日期</label><input id="inWDate" type="date"></div>
-        <div class="field"><label for="inWeight">体重（kg）</label><input id="inWeight" type="number" inputmode="decimal" min="20" max="300" step="0.1" placeholder="如 65.5"></div>
+        <div class="field"><label for="inWeight">体重（kg）</label><input id="inWeight" type="number" inputmode="decimal" min="20" max="300" step="0.01" placeholder="如 65.50"></div>
         <div class="field"><label>&nbsp;</label><button class="btn block" id="btnSaveWeight">保存记录</button></div>
       </div>
       <p class="hint" style="margin-top:10px">填写身高后自动计算 BMI；同一天重复保存会覆盖当天记录。建议每天晨起空腹、同一台秤称量。</p>
@@ -1019,7 +1019,7 @@ function renderCalendar(){
     if(rec){
       var dir = rec.prev === null ? '' : (rec.kg > rec.prev ? ' up' : (rec.kg < rec.prev ? ' down' : ''));
       var kgEl = h('span', 'cal-kg' + dir);
-      kgEl.appendChild(document.createTextNode(rec.kg.toFixed(1)));
+      kgEl.appendChild(document.createTextNode(rec.kg.toFixed(2)));
       if(dir === ' up') kgEl.appendChild(h('span', 'cal-arrow', '▲'));
       if(dir === ' down') kgEl.appendChild(h('span', 'cal-arrow', '▼'));
       cell.appendChild(kgEl);
@@ -1169,7 +1169,7 @@ function renderWeight(){
   var list = sortedWeights();
   var last = list[list.length - 1] || null;
   var prev = list[list.length - 2] || null;
-  $('#stWeight').textContent = last ? last.kg.toFixed(1) : '—';
+  $('#stWeight').textContent = last ? last.kg.toFixed(2) : '—';
   if(last){ var u = h('small', null, ' kg'); $('#stWeight').appendChild(u); }
   var b = last ? bmiOf(last.kg) : null;
   $('#stBmi').textContent = b ? b.toFixed(1) : '—';
@@ -1178,7 +1178,7 @@ function renderWeight(){
   $('#stCat').textContent = b ? bmiCat(b).label : (last ? '待填身高' : '—');
   if(last && prev){
     var d = last.kg - prev.kg;
-    $('#stDiff').textContent = (d > 0 ? '+' : '') + d.toFixed(1);
+    $('#stDiff').textContent = (d > 0 ? '+' : '') + d.toFixed(2);
     var u2 = h('small', null, ' kg'); $('#stDiff').appendChild(u2);
   }else{ $('#stDiff').textContent = '—'; }
   $('#weightHint').textContent = state.heightCm
@@ -1191,7 +1191,7 @@ function renderWeight(){
     var node = clone('tplWeightRow');
     var row = node.querySelector('.rec');
     row.querySelector('.date').textContent = w.date;
-    row.querySelector('.kg').textContent = w.kg.toFixed(1) + ' kg';
+    row.querySelector('.kg').textContent = w.kg.toFixed(2) + ' kg';
     var wb = bmiOf(w.kg);
     var chip = row.querySelector('.chip');
     if(wb){
@@ -1233,13 +1233,13 @@ function renderCountdown(){
   }
   var diff = last.kg - state.goalKg;
   if(diff > 0){
-    diffEl.textContent = diff.toFixed(1);
+    diffEl.textContent = diff.toFixed(2);
     diffEl.parentNode.classList.remove('done');
-    sub.textContent = '当前 ' + last.kg.toFixed(1) + ' kg → 目标 ' + state.goalKg + ' kg';
+    sub.textContent = '当前 ' + last.kg.toFixed(2) + ' kg → 目标 ' + state.goalKg + ' kg';
   }else{
     diffEl.textContent = '已达标';
     diffEl.parentNode.classList.add('done');
-    sub.textContent = '当前 ' + last.kg.toFixed(1) + ' kg，保持住！';
+    sub.textContent = '当前 ' + last.kg.toFixed(2) + ' kg，保持住！';
   }
 }
 $('#inGoalKg').addEventListener('change', function(){
@@ -1266,7 +1266,7 @@ $('#btnSaveWeight').addEventListener('click', function(){
   }
   if(isNaN(kg) || kg < 20 || kg > 300){ toast('体重请输入 20–300 kg'); return; }
   if(!date){ toast('请选择日期'); return; }
-  kg = Math.round(kg * 10) / 10;
+  kg = Math.round(kg * 100) / 100;
   var exist = state.weights.find(function(w){ return w.date === date; });
   if(exist){ exist.kg = kg; } else { state.weights.push({ date:date, kg:kg }); }
   save(); renderWeight(); drawChart();
@@ -1988,7 +1988,7 @@ function chartPointer(evt){
   var tip = $('#chartTip');
   tip.textContent = '';
   tip.appendChild(h('div', 'd', d.date));
-  tip.appendChild(h('div', null, '体重 ' + d.kg.toFixed(1) + ' kg'));
+  tip.appendChild(h('div', null, '体重 ' + d.kg.toFixed(2) + ' kg'));
   if(g.showMA && g.maVals){
     tip.appendChild(h('div', null, '7日均线 ' + g.maVals[idx].toFixed(1) + ' kg'));
   }
@@ -2076,7 +2076,7 @@ function updateProteinModeUI(){
     var kg = latestKg();
     var per = parseFloat($('#setProteinPerKg').value) || 1.4;
     hint.textContent = kg
-      ? ('当前蛋白质目标 = 最新体重 ' + kg.toFixed(1) + ' kg × ' + per + ' g/kg ≈ ' + Math.round(kg * per) + ' g，随体重自动更新。减重保肌肉建议 1.2–1.6 g/kg。')
+      ? ('当前蛋白质目标 = 最新体重 ' + kg.toFixed(2) + ' kg × ' + per + ' g/kg ≈ ' + Math.round(kg * per) + ' g，随体重自动更新。减重保肌肉建议 1.2–1.6 g/kg。')
       : '按体重联动：暂无体重记录，先记录体重；目标 = 体重 × 每公斤克数（减重保肌肉建议 1.2–1.6 g/kg）。';
   }else{
     hint.textContent = '';
@@ -2308,8 +2308,8 @@ function exportXlsx(){
   wList.forEach(function(w, i){
     var b = bmiOf(w.kg);
     var prev = i > 0 ? wList[i - 1].kg : null;
-    var dayDrop = prev !== null ? Math.round((prev - w.kg) * 10) / 10 : '';
-    var cumDrop = firstKg !== null ? Math.round((firstKg - w.kg) * 10) / 10 : '';
+    var dayDrop = prev !== null ? Math.round((prev - w.kg) * 100) / 100 : '';
+    var cumDrop = firstKg !== null ? Math.round((firstKg - w.kg) * 100) / 100 : '';
     wRows.push([w.date, w.kg, dayDrop, cumDrop, b ? Math.round(b * 10) / 10 : '', b ? bmiCat(b).label : '']);
   });
   /* 工作表2：饮食明细 */
