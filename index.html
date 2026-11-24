@@ -148,6 +148,8 @@ main{padding:16px 0 40px}
 .ai-macros .m-protein{color:#d63a4a}
 .ai-macros .m-fat{color:#c07f10}
 .ai-macros .m-carb{color:#1f8fd6}
+.chk-row{display:flex;align-items:center;gap:8px;font-size:.9rem;cursor:pointer;min-height:44px}
+.chk-row input{width:18px;height:18px;accent-color:var(--primary);flex:none}
 /* SECTION: rings */
 .ring-wrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
 .ring-box{width:172px;max-width:48vw;flex:none}
@@ -562,6 +564,8 @@ footer{font-size:.74rem;color:#93a5a2;text-align:center;padding:8px 14px calc(26
           </div>
           <div class="field"><label>&nbsp;</label><button class="btn block" id="btnSaveAi">保存 AI 设置</button></div>
         </div>
+        <label class="chk-row" style="margin-top:12px"><input type="checkbox" id="setSearch"> 联网搜索参考（估算时检索网络食物热量数据）</label>
+        <p class="hint" style="margin-top:6px">开启后估算会优先参考网上检索到的数据，速度稍慢、额度消耗更多；仅千问 AI 模式生效。个别模型不支持联网，报错时关闭此开关或换用 qwen-plus / qwen-max 即可。</p>
         <p class="key-status hint" id="keyStatus"></p>
         <details>
           <summary>如何获取 API Key？</summary>
@@ -670,7 +674,7 @@ var MEALS = [
   { key:'snack', label:'加餐', color:'#a06cc9' }
 ];
 function defaultState(){
-  return { heightCm:null, targetKcal:2000, goalKg:60, age:null, sex:'', activityFactor:1.2, apiKey:'', model:'qwen-plus', weights:[], meals:[], activities:[],
+  return { heightCm:null, targetKcal:2000, goalKg:60, age:null, sex:'', activityFactor:1.2, apiKey:'', model:'qwen-plus', searchEnabled:false, weights:[], meals:[], activities:[],
     macroTargets:{ protein:75, fat:55, carb:275 } };
 }
 function normMacros(t){
@@ -695,6 +699,7 @@ try{
       state.activityFactor = [1.2, 1.375, 1.55, 1.725].indexOf(parsed.activityFactor) >= 0 ? parsed.activityFactor : 1.2;
       state.apiKey = typeof parsed.apiKey === 'string' ? parsed.apiKey : '';
       state.model = typeof parsed.model === 'string' ? parsed.model : 'qwen-plus';
+      state.searchEnabled = parsed.searchEnabled === true;
       state.weights = Array.isArray(parsed.weights) ? parsed.weights.filter(function(w){ return w && typeof w.date === 'string' && typeof w.kg === 'number'; }) : [];
       state.meals = Array.isArray(parsed.meals) ? parsed.meals.filter(function(m){ return m && typeof m.date === 'string' && typeof m.kcal === 'number' && typeof m.name === 'string'; }) : [];
       state.activities = Array.isArray(parsed.activities) ? parsed.activities.filter(function(a){ return a && typeof a.date === 'string' && typeof a.kcal === 'number' && typeof a.name === 'string'; }) : [];
@@ -1224,9 +1229,9 @@ function aiMode(){ return state.apiKey ? 'api' : 'db'; }
 function refreshAiBadge(){
   var badge = $('#aiBadge');
   if(aiMode() === 'api'){
-    badge.textContent = '千问 ' + state.model;
+    badge.textContent = '千问 ' + state.model + (state.searchEnabled ? ' · 联网' : '');
     badge.classList.remove('off');
-    $('#aiHint').textContent = '已接入千问 AI：描述食物后由大模型估算热量，确认即可自动记入。估算结果仅供参考。';
+    $('#aiHint').textContent = '已接入千问 AI：描述食物后由大模型估算热量，确认即可自动记入。估算结果仅供参考。' + (state.searchEnabled ? ' 联网搜索已开启：估算会参考网络检索数据，速度稍慢、额度消耗更多。' : '');
   }else{
     badge.textContent = '内置食物库';
     badge.classList.add('off');
@@ -1314,14 +1319,22 @@ function parseAiJson(text){
 function callQwen(text){
   var ctrl = new AbortController();
   var timer = setTimeout(function(){ ctrl.abort(); }, 45000);
+  var sys = '你是营养估算助手。用户描述吃过的食物，你按中国常见份量估算每种食物的热量和三大营养素。只输出 JSON，不要输出任何其他文字，格式为 {"items":[{"name":"食物名（份量说明）","kcal":整数,"protein":克数,"fat":克数,"carb":克数}]}。要求：每种食物单独一项；kcal 为该份量总千卡数；protein/fat/carb 分别为该份量的蛋白质、脂肪、碳水化合物克数（可保留一位小数）；份量不明确时按常见一人份估算；注意烹饪用油会提高热量和脂肪；数值应自洽（蛋白质×4+脂肪×9+碳水×4≈kcal）。';
+  if(state.searchEnabled){
+    sys += '已开启联网搜索：请优先参考检索到的权威食物成分数据（注意生熟口径、每100克还是每份的单位），再按用户描述的份量换算。';
+  }
   var body = {
     model: state.model,
     temperature: 0.2,
     messages: [
-      { role:'system', content:'你是营养估算助手。用户描述吃过的食物，你按中国常见份量估算每种食物的热量和三大营养素。只输出 JSON，不要输出任何其他文字，格式为 {"items":[{"name":"食物名（份量说明）","kcal":整数,"protein":克数,"fat":克数,"carb":克数}]}。要求：每种食物单独一项；kcal 为该份量总千卡数；protein/fat/carb 分别为该份量的蛋白质、脂肪、碳水化合物克数（可保留一位小数）；份量不明确时按常见一人份估算；注意烹饪用油会提高热量和脂肪；数值应自洽（蛋白质×4+脂肪×9+碳水×4≈kcal）。' },
+      { role:'system', content:sys },
       { role:'user', content:text }
     ]
   };
+  if(state.searchEnabled){
+    body.enable_search = true;
+    body.search_options = { forced_search: true };
+  }
   return fetch('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', {
     method:'POST',
     headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + state.apiKey },
@@ -1331,7 +1344,13 @@ function callQwen(text){
     clearTimeout(timer);
     if(resp.status === 401 || resp.status === 403) throw new Error('API Key 无效或无权限，请到「设置」检查（错误码 ' + resp.status + '）');
     if(resp.status === 429) throw new Error('请求过于频繁或额度不足（429），请稍后再试或检查百炼账户额度');
-    if(!resp.ok) throw new Error('接口返回错误（' + resp.status + '），请稍后再试');
+    if(!resp.ok){
+      return resp.json().catch(function(){ return null; }).then(function(eb){
+        var m = eb && eb.error && eb.error.message ? String(eb.error.message) : '';
+        if(m.indexOf('enable_search') >= 0) throw new Error('当前模型不支持联网搜索：请到「设置」关闭联网开关，或换用 qwen-plus / qwen-max');
+        throw new Error('接口返回错误（' + resp.status + '）' + (m ? '：' + m : '，请稍后再试'));
+      });
+    }
     return resp.json();
   }).then(function(data){
     var content = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
@@ -1560,6 +1579,7 @@ function fillSettings(){
   $('#setMacroCarb').value = state.macroTargets.carb;
   $('#setKey').value = state.apiKey;
   $('#setModel').value = state.model;
+  $('#setSearch').checked = state.searchEnabled;
   $('#keyStatus').textContent = state.apiKey
     ? '已配置 Key，饮食页将由千问 ' + state.model + ' 估算热量。'
     : '未配置 Key，饮食页使用内置食物库离线估算。';
@@ -1611,6 +1631,7 @@ $('#btnSaveAi').addEventListener('click', function(){
   if(key && key.indexOf('sk-') !== 0){ toast('Key 一般以 sk- 开头，请检查是否复制完整'); return; }
   state.apiKey = key;
   state.model = $('#setModel').value;
+  state.searchEnabled = $('#setSearch').checked;
   save(); refreshAiBadge(); fillSettings();
   toast(key ? '已启用千问 AI 估算' : '已切换为内置食物库模式');
 });
@@ -1646,6 +1667,7 @@ $('#fileImport').addEventListener('change', function(){
       $('#inGoalKg').value = state.goalKg;
       state.apiKey = typeof obj.apiKey === 'string' ? obj.apiKey : '';
       state.model = typeof obj.model === 'string' ? obj.model : 'qwen-plus';
+      state.searchEnabled = obj.searchEnabled === true;
       state.weights = obj.weights.filter(function(w){ return w && typeof w.date === 'string' && typeof w.kg === 'number'; });
       state.meals = obj.meals.filter(function(m){ return m && typeof m.date === 'string' && typeof m.kcal === 'number' && typeof m.name === 'string'; })
         .map(function(m){ return { id:m.id || uid(), date:m.date, meal:m.meal || 'snack', name:m.name, kcal:m.kcal,
