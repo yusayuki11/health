@@ -163,6 +163,22 @@ main{padding:16px 0 40px}
 .ring-row .pc{margin-left:auto;font-weight:700;font-size:.92rem;flex:none}
 .ring-row .pc.over{color:var(--red)}
 .rec .macro{flex-basis:100%;font-size:.72rem;color:#9ab0ac}
+/* SECTION: energy-card */
+.eb-nav{margin-left:auto;display:inline-flex;gap:6px}
+.eb-nav .navbtn{width:34px;height:34px;font-size:1rem;border-radius:9px}
+.eb-hero{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:2px}
+.eb-num{font-size:2.3rem;font-weight:800;color:var(--primary-dark);line-height:1.15}
+.eb-num.over{color:var(--red)}
+.eb-num.neutral{color:var(--muted)}
+.eb-unit{font-size:.84rem;color:var(--muted)}
+.eb-bars{display:flex;flex-direction:column;gap:9px;margin-top:12px}
+.eb-bar-row{display:flex;align-items:center;gap:10px;min-width:0}
+.eb-bar-label{font-size:.8rem;color:var(--muted);width:34px;flex:none}
+.eb-track{flex:1;height:12px;background:#edf2f1;border-radius:99px;overflow:hidden;min-width:0}
+.eb-fill{height:100%;width:0;border-radius:99px;transition:width .4s}
+.eb-fill.intake{background:linear-gradient(90deg,#f08c2e,#f7b32b)}
+.eb-fill.burn{background:linear-gradient(90deg,#0e9f8a,#3cc9a7)}
+.eb-bar-val{font-size:.82rem;font-weight:600;width:70px;text-align:right;flex:none}
 .ai-actions{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 /* SECTION: chart */
 .chart-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
@@ -256,6 +272,33 @@ footer{font-size:.74rem;color:#93a5a2;text-align:center;padding:8px 14px calc(26
         <div class="stat"><div class="k">较上次</div><div class="v" id="stDiff">—</div></div>
       </div>
       <p class="hint" id="weightHint" style="margin-top:10px"></p>
+    </div>
+
+    <div class="card">
+      <h2>热量缺口 <span class="badge" id="ebDateBadge"></span>
+        <span class="eb-nav">
+          <button class="navbtn" id="ebPrev" aria-label="前一天">‹</button>
+          <button class="navbtn" id="ebNext" aria-label="后一天">›</button>
+        </span>
+      </h2>
+      <div class="eb-hero">
+        <div class="eb-num" id="ebDeficit">—</div>
+        <div class="eb-unit" id="ebLabel">千卡</div>
+      </div>
+      <div class="eb-bars">
+        <div class="eb-bar-row">
+          <span class="eb-bar-label">摄入</span>
+          <div class="eb-track"><div class="eb-fill intake" id="ebIntakeBar"></div></div>
+          <span class="eb-bar-val" id="ebIntakeVal">—</span>
+        </div>
+        <div class="eb-bar-row">
+          <span class="eb-bar-label">消耗</span>
+          <div class="eb-track"><div class="eb-fill burn" id="ebBurnBar"></div></div>
+          <span class="eb-bar-val" id="ebBurnVal">—</span>
+        </div>
+      </div>
+      <div class="meal-chips" id="ebChips" style="margin-top:12px"></div>
+      <p class="hint" id="ebHint" style="margin-top:10px"></p>
     </div>
 
     <div class="card">
@@ -468,8 +511,25 @@ footer{font-size:.74rem;color:#93a5a2;text-align:center;padding:8px 14px calc(26
       <div class="form-grid">
         <div class="field"><label for="setHeight">身高（cm）</label><input id="setHeight" type="number" inputmode="decimal" min="80" max="250" step="0.1" placeholder="如 170"></div>
         <div class="field"><label for="setTarget">每日热量目标（千卡）</label><input id="setTarget" type="number" inputmode="numeric" min="800" max="6000" step="10" placeholder="如 2000"></div>
+        <div class="field"><label for="setAge">年龄（岁）</label><input id="setAge" type="number" inputmode="numeric" min="10" max="100" step="1" placeholder="如 30"></div>
+        <div class="field"><label for="setSex">性别（算基础代谢用）</label>
+          <select id="setSex">
+            <option value="">请选择</option>
+            <option value="male">男</option>
+            <option value="female">女</option>
+          </select>
+        </div>
+        <div class="field"><label for="setFactor">日常活动系数</label>
+          <select id="setFactor">
+            <option value="1.2">久坐为主（1.2）</option>
+            <option value="1.375">日常轻度活动（1.375）</option>
+            <option value="1.55">日常中等活动（1.55）</option>
+            <option value="1.725">日常高活动/体力工作（1.725）</option>
+          </select>
+        </div>
         <div class="field"><label>&nbsp;</label><button class="btn block" id="btnSaveBody">保存</button></div>
       </div>
+      <p class="hint" style="margin-top:10px">年龄、性别、日常系数用于「体重」页的热量缺口计算：基础代谢按 Mifflin-St Jeor 公式，日常消耗 = 基础代谢 × 系数；系数只覆盖工作生活日常活动，运动请在「活动」页单独记录，避免重复计算。</p>
       <p class="hint" style="margin-top:10px">参考：轻体力活动成年女性每日约 1600–2100 千卡、男性约 1950–2550 千卡（《中国居民膳食营养素参考摄入量》）。减重可在专业指导下适度下调，不建议过低。</p>
     </div>
 
@@ -529,7 +589,7 @@ footer{font-size:.74rem;color:#93a5a2;text-align:center;padding:8px 14px calc(26
 
     <div class="card">
       <h2>说明</h2>
-      <p class="hint">· BMI = 体重(kg) ÷ 身高(m)²，分类依据国家卫生行业标准《成人体重判定》（WS/T 428-2013）：&lt;18.5 偏瘦，18.5–&lt;24 正常，24–&lt;28 超重，≥28 肥胖。适用于 18 岁及以上普通成人，孕妇、儿童青少年、肌肉量极高的运动员不适用。<br>· 内置食物库热量为每 100 克/毫升参考值折算的常见份量估算；AI 估算同样仅供参考，实际热量受烹饪方式、用油量等影响。<br>· 活动消耗按 MET × 体重(kg) × 时长(小时) 估算，MET 参考《健康成年人身体活动能量消耗参考值》（T/CSSS 002—2023）等公开系数；结果含同时段基础消耗，自定义活动建议以手环/手表数据为准。<br>· 本工具用于日常记录参考，不构成医疗建议。</p>
+      <p class="hint">· BMI = 体重(kg) ÷ 身高(m)²，分类依据国家卫生行业标准《成人体重判定》（WS/T 428-2013）：&lt;18.5 偏瘦，18.5–&lt;24 正常，24–&lt;28 超重，≥28 肥胖。适用于 18 岁及以上普通成人，孕妇、儿童青少年、肌肉量极高的运动员不适用。<br>· 内置食物库热量为每 100 克/毫升参考值折算的常见份量估算；AI 估算同样仅供参考，实际热量受烹饪方式、用油量等影响。<br>· 活动消耗按 MET × 体重(kg) × 时长(小时) 估算，MET 参考《健康成年人身体活动能量消耗参考值》（T/CSSS 002—2023）等公开系数；结果含同时段基础消耗，自定义活动建议以手环/手表数据为准。<br>· 热量缺口：基础代谢按 Mifflin-St Jeor 公式（男：10×体重+6.25×身高−5×年龄+5；女：−161），总消耗 = 基础代谢×日常系数 + 活动记录，缺口 = 总消耗 − 摄入；公式估算误差约 ±10–15%，仅供参考。<br>· 本工具用于日常记录参考，不构成医疗建议。</p>
     </div>
   </section>
 
@@ -610,7 +670,7 @@ var MEALS = [
   { key:'snack', label:'加餐', color:'#a06cc9' }
 ];
 function defaultState(){
-  return { heightCm:null, targetKcal:2000, goalKg:60, apiKey:'', model:'qwen-plus', weights:[], meals:[], activities:[],
+  return { heightCm:null, targetKcal:2000, goalKg:60, age:null, sex:'', activityFactor:1.2, apiKey:'', model:'qwen-plus', weights:[], meals:[], activities:[],
     macroTargets:{ protein:75, fat:55, carb:275 } };
 }
 function normMacros(t){
@@ -630,6 +690,9 @@ try{
       state.heightCm = typeof parsed.heightCm === 'number' ? parsed.heightCm : null;
       state.targetKcal = typeof parsed.targetKcal === 'number' ? parsed.targetKcal : 2000;
       state.goalKg = typeof parsed.goalKg === 'number' && isFinite(parsed.goalKg) ? parsed.goalKg : 60;
+      state.age = typeof parsed.age === 'number' && isFinite(parsed.age) ? parsed.age : null;
+      state.sex = parsed.sex === 'male' || parsed.sex === 'female' ? parsed.sex : '';
+      state.activityFactor = [1.2, 1.375, 1.55, 1.725].indexOf(parsed.activityFactor) >= 0 ? parsed.activityFactor : 1.2;
       state.apiKey = typeof parsed.apiKey === 'string' ? parsed.apiKey : '';
       state.model = typeof parsed.model === 'string' ? parsed.model : 'qwen-plus';
       state.weights = Array.isArray(parsed.weights) ? parsed.weights.filter(function(w){ return w && typeof w.date === 'string' && typeof w.kg === 'number'; }) : [];
@@ -643,7 +706,7 @@ function save(){
   try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
   catch(e){ toast('保存失败：浏览器存储不可用'); }
 }
-var ui = { dietDate: todayStr(), actDate: todayStr(), range:'30', showW:true, showB:true };
+var ui = { dietDate: todayStr(), actDate: todayStr(), ebDate: todayStr(), range:'30', showW:true, showB:true };
 /* SECTION: bmi */
 function bmiOf(kg){
   if(!state.heightCm || state.heightCm <= 0) return null;
@@ -659,6 +722,65 @@ function bmiCat(v){
 function sortedWeights(){
   return state.weights.slice().sort(function(a,b){ return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
 }
+/* SECTION: energy-balance */
+/* Mifflin-St Jeor 基础代谢公式（男 +5，女 -161）；总消耗 = BMR×日常系数 + 记录的活动消耗 */
+function bmrOf(kg, heightCm, age, sex){
+  if(!(kg > 0) || !(heightCm > 0) || !(age > 0) || (sex !== 'male' && sex !== 'female')) return null;
+  var base = 10 * kg + 6.25 * heightCm - 5 * age;
+  return sex === 'male' ? base + 5 : base - 161;
+}
+function energyOfDay(date){
+  var ws = sortedWeights().filter(function(w){ return w.date <= date; });
+  var kg = ws.length ? ws[ws.length - 1].kg : null;
+  var bmr = bmrOf(kg, state.heightCm, state.age, state.sex);
+  var intake = mealsOf(date).reduce(function(s,m){ return s + m.kcal; }, 0);
+  var act = actTotalOf(date);
+  if(bmr === null) return { ready:false, kg:kg, intake:intake, act:act };
+  var factor = state.activityFactor || 1.2;
+  var base = bmr * factor;
+  var total = base + act;
+  return { ready:true, kg:kg, bmr:bmr, factor:factor, base:base, act:act, total:total, intake:intake, deficit:total - intake };
+}
+function renderEnergyCard(){
+  var eb = energyOfDay(ui.ebDate);
+  document.getElementById('ebDateBadge').textContent = mdLabel(ui.ebDate);
+  var big = $('#ebDeficit'), label = $('#ebLabel'), chips = $('#ebChips'), hint = $('#ebHint');
+  var intakeBar = $('#ebIntakeBar'), burnBar = $('#ebBurnBar');
+  var intakeVal = $('#ebIntakeVal'), burnVal = $('#ebBurnVal');
+  chips.textContent = '';
+  if(!eb.ready){
+    big.textContent = '—'; big.className = 'eb-num neutral';
+    label.textContent = '千卡 · 待完善身体信息';
+    intakeBar.style.width = eb.intake > 0 ? '100%' : '0%';
+    burnBar.style.width = '0%';
+    intakeVal.textContent = Math.round(eb.intake) + ' 千卡';
+    burnVal.textContent = '—';
+    hint.textContent = '到「设置」填写年龄和性别（还需身高与体重记录），即可自动计算基础代谢和每日热量缺口。';
+    return;
+  }
+  big.textContent = (eb.deficit > 0 ? '+' : '') + Math.round(eb.deficit);
+  big.className = 'eb-num' + (eb.deficit < 0 ? ' over' : '');
+  label.textContent = eb.deficit >= 0 ? '千卡 · 缺口（消耗 > 摄入）' : '千卡 · 盈余（摄入 > 消耗）';
+  var mx = Math.max(eb.total, eb.intake, 1);
+  intakeBar.style.width = (eb.intake / mx * 100) + '%';
+  burnBar.style.width = (eb.total / mx * 100) + '%';
+  intakeVal.textContent = Math.round(eb.intake) + ' 千卡';
+  burnVal.textContent = Math.round(eb.total) + ' 千卡';
+  var parts = [
+    ['基础代谢', Math.round(eb.bmr)],
+    ['日常×' + eb.factor, Math.round(eb.base)],
+    ['活动消耗', Math.round(eb.act)]
+  ];
+  parts.forEach(function(p){
+    var c = h('span', 'meal-chip');
+    c.appendChild(document.createTextNode(p[0] + ' '));
+    c.appendChild(h('b', null, p[1] + ' 千卡'));
+    chips.appendChild(c);
+  });
+  hint.textContent = '缺口 = 总消耗 − 摄入。总消耗 = 基础代谢（Mifflin-St Jeor 公式，按年龄/性别/身高/体重）× 日常系数 + 活动记录。减重建议每日缺口 300–500 千卡、不超过 1000，摄入不宜长期低于基础代谢。估算仅供参考。';
+}
+$('#ebPrev').addEventListener('click', function(){ ui.ebDate = shiftDate(ui.ebDate, -1); renderEnergyCard(); });
+$('#ebNext').addEventListener('click', function(){ ui.ebDate = shiftDate(ui.ebDate, 1); renderEnergyCard(); });
 /* SECTION: tabs */
 var tabBtns = document.querySelectorAll('#tabs .tab');
 tabBtns.forEach(function(btn){
@@ -714,6 +836,7 @@ function renderWeight(){
     box.appendChild(node);
   });
   renderCountdown();
+  renderEnergyCard();
 }
 /* SECTION: countdown */
 function renderCountdown(){
@@ -837,6 +960,7 @@ function renderDiet(){
     secBox.appendChild(node);
   });
   renderRings();
+  renderEnergyCard();
 }
 /* SECTION: macro-rings */
 function macroTotalsOf(date){
@@ -1428,6 +1552,9 @@ $('#tgB').addEventListener('click', function(){
 function fillSettings(){
   $('#setHeight').value = state.heightCm || '';
   $('#setTarget').value = state.targetKcal || '';
+  $('#setAge').value = state.age || '';
+  $('#setSex').value = state.sex;
+  $('#setFactor').value = String(state.activityFactor || 1.2);
   $('#setMacroProtein').value = state.macroTargets.protein;
   $('#setMacroFat').value = state.macroTargets.fat;
   $('#setMacroCarb').value = state.macroTargets.carb;
@@ -1442,8 +1569,13 @@ $('#btnSaveBody').addEventListener('click', function(){
   var tgt = parseFloat($('#setTarget').value);
   if($('#setHeight').value !== '' && (isNaN(hgt) || hgt < 80 || hgt > 250)){ toast('身高请输入 80–250 cm'); return; }
   if($('#setTarget').value !== '' && (isNaN(tgt) || tgt < 800 || tgt > 6000)){ toast('热量目标请输入 800–6000 千卡'); return; }
+  var age = parseFloat($('#setAge').value);
+  if($('#setAge').value !== '' && (isNaN(age) || age < 10 || age > 100)){ toast('年龄请输入 10–100 岁'); return; }
   state.heightCm = $('#setHeight').value === '' ? null : Math.round(hgt * 10) / 10;
   state.targetKcal = $('#setTarget').value === '' ? 0 : Math.round(tgt);
+  state.age = $('#setAge').value === '' ? null : Math.round(age);
+  state.sex = $('#setSex').value;
+  state.activityFactor = parseFloat($('#setFactor').value) || 1.2;
   save(); renderWeight(); renderDiet(); drawChart();
   $('#inHeight').value = state.heightCm || '';
   toast('已保存');
@@ -1508,6 +1640,9 @@ $('#fileImport').addEventListener('change', function(){
       state.heightCm = typeof obj.heightCm === 'number' ? obj.heightCm : null;
       state.targetKcal = typeof obj.targetKcal === 'number' ? obj.targetKcal : 2000;
       state.goalKg = typeof obj.goalKg === 'number' && isFinite(obj.goalKg) ? obj.goalKg : 60;
+      state.age = typeof obj.age === 'number' && isFinite(obj.age) ? obj.age : null;
+      state.sex = obj.sex === 'male' || obj.sex === 'female' ? obj.sex : '';
+      state.activityFactor = [1.2, 1.375, 1.55, 1.725].indexOf(obj.activityFactor) >= 0 ? obj.activityFactor : 1.2;
       $('#inGoalKg').value = state.goalKg;
       state.apiKey = typeof obj.apiKey === 'string' ? obj.apiKey : '';
       state.model = typeof obj.model === 'string' ? obj.model : 'qwen-plus';
@@ -1658,10 +1793,15 @@ function exportXlsx(){
   var mealLabel = {};
   MEALS.forEach(function(m){ mealLabel[m.key] = m.label; });
   /* 工作表1：体重记录 */
-  var wRows = [['日期', '体重(kg)', 'BMI', '体重状态']];
-  sortedWeights().forEach(function(w){
+  var wRows = [['日期', '体重(kg)', '较前一天下降(kg)', '累计下降(kg)', 'BMI', '体重状态']];
+  var wList = sortedWeights();
+  var firstKg = wList.length ? wList[0].kg : null;
+  wList.forEach(function(w, i){
     var b = bmiOf(w.kg);
-    wRows.push([w.date, w.kg, b ? Math.round(b * 10) / 10 : '', b ? bmiCat(b).label : '']);
+    var prev = i > 0 ? wList[i - 1].kg : null;
+    var dayDrop = prev !== null ? Math.round((prev - w.kg) * 10) / 10 : '';
+    var cumDrop = firstKg !== null ? Math.round((firstKg - w.kg) * 10) / 10 : '';
+    wRows.push([w.date, w.kg, dayDrop, cumDrop, b ? Math.round(b * 10) / 10 : '', b ? bmiCat(b).label : '']);
   });
   /* 工作表2：饮食明细 */
   var r1 = function(x){ return Math.round(x * 10) / 10; };
@@ -1692,15 +1832,19 @@ function exportXlsx(){
     d.carb += (m.carb || 0);
   });
   state.activities.forEach(function(a){ daySlot(a.date).act += a.kcal; });
-  var dRows = [['日期', '体重(kg)', 'BMI', '早餐(千卡)', '午餐(千卡)', '晚餐(千卡)', '加餐(千卡)', '总热量(千卡)', '活动消耗(千卡)', '蛋白质(g)', '脂肪(g)', '碳水(g)', '热量目标(千卡)']];
+  var dRows = [['日期', '体重(kg)', 'BMI', '早餐(千卡)', '午餐(千卡)', '晚餐(千卡)', '加餐(千卡)', '总热量(千卡)', '活动消耗(千卡)', '基础代谢(千卡)', '总消耗(千卡)', '热量缺口(千卡)', '蛋白质(g)', '脂肪(g)', '碳水(g)', '热量目标(千卡)']];
   Object.keys(dayMap).sort().forEach(function(date){
     var d = dayMap[date];
     var b = d.kg !== null ? bmiOf(d.kg) : null;
     var sums = MEALS.map(function(m){ return d.meals[m.key] ? Math.round(d.meals[m.key]) : ''; });
     var total = MEALS.reduce(function(s, m){ return s + (d.meals[m.key] || 0); }, 0);
+    var eb = energyOfDay(date);
+    var ebCols = eb.ready ? [Math.round(eb.bmr), Math.round(eb.total), Math.round(eb.deficit)] : ['', '', ''];
     dRows.push([date, d.kg !== null ? d.kg : '', b ? Math.round(b * 10) / 10 : '']
       .concat(sums)
-      .concat([total ? Math.round(total) : '', d.act ? Math.round(d.act) : '', r1(d.protein), r1(d.fat), r1(d.carb), state.targetKcal || '']));
+      .concat([total ? Math.round(total) : '', d.act ? Math.round(d.act) : ''])
+      .concat(ebCols)
+      .concat([r1(d.protein), r1(d.fat), r1(d.carb), state.targetKcal || '']));
   });
   var blob = buildXlsx([
     { name:'体重记录', rows:wRows },
