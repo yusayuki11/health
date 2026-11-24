@@ -193,6 +193,9 @@ main{padding:16px 0 40px}
 .series-toggle button.on{border-color:currentColor;font-weight:600}
 .series-toggle button.w.on{color:var(--primary-dark);background:var(--primary-soft)}
 .series-toggle button.b.on{color:#c56a10;background:var(--orange-soft)}
+.series-toggle button.ma.on{color:#7c4dbe;background:#f0e8f8}
+.meal-head .tpl-save{flex:none;padding:5px 10px;font-size:.76rem;min-height:32px}
+.tpl-use{flex:none}
 .chart-box{position:relative;width:100%;min-height:220px}
 .chart-box svg{width:100%;height:auto;display:block;touch-action:pan-y}
 .chart-tip{position:absolute;pointer-events:none;background:rgba(31,45,43,.92);color:#fff;font-size:.78rem;border-radius:9px;padding:8px 11px;display:none;z-index:5;white-space:nowrap;line-height:1.6}
@@ -304,6 +307,23 @@ footer{font-size:.74rem;color:#93a5a2;text-align:center;padding:8px 14px calc(26
     </div>
 
     <div class="card">
+      <h2>代谢校准 <span class="badge off" id="calibBadge">未校准</span></h2>
+      <p class="hint">用最近 28 天的真实体重变化（7 日均线平滑）和平均摄入，反推你的实际每日消耗，修正公式估算（1kg 体重变化 ≈ 7700 千卡）。条件：窗口内体重跨度 ≥14 天、饮食记录 ≥10 天。早期减重含水分，结果仅供参考。</p>
+      <div class="row" style="margin-top:12px">
+        <button class="btn ghost" id="btnCalibCalc">计算校准</button>
+        <button class="btn danger" id="btnCalibClear" style="display:none">清除校准</button>
+      </div>
+      <div id="calibDetail" style="display:none">
+        <div class="meal-chips" id="calibChips" style="margin-top:12px"></div>
+        <p class="hint" id="calibNote" style="margin-top:8px"></p>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" id="btnCalibApply">应用校准</button>
+        </div>
+      </div>
+      <p class="hint" id="calibStatus" style="margin-top:10px"></p>
+    </div>
+
+    <div class="card">
       <h2>记录体重</h2>
       <div class="form-grid">
         <div class="field"><label for="inHeight">身高（cm）</label><input id="inHeight" type="number" inputmode="decimal" min="80" max="250" step="0.1" placeholder="如 170"></div>
@@ -329,6 +349,7 @@ footer{font-size:.74rem;color:#93a5a2;text-align:center;padding:8px 14px calc(26
         <input type="date" id="inDietDate">
         <button class="navbtn" id="btnNextDay" aria-label="后一天">›</button>
         <button class="btn ghost small" id="btnToday">今天</button>
+        <button class="btn ghost small" id="btnCopyYesterday">复制昨日</button>
       </div>
     </div>
 
@@ -419,6 +440,12 @@ footer{font-size:.74rem;color:#93a5a2;text-align:center;padding:8px 14px calc(26
     </div>
 
     <div class="card">
+      <h2>我的常用餐 <span class="badge" id="tplCount">0 个</span></h2>
+      <div class="rec-list" id="tplList"></div>
+      <div class="empty" id="tplEmpty">还没有模板。在下方餐次明细里点「存为模板」，以后一键记入。</div>
+    </div>
+
+    <div class="card">
       <h2>当日三餐明细</h2>
       <div id="mealSections"></div>
     </div>
@@ -495,6 +522,7 @@ footer{font-size:.74rem;color:#93a5a2;text-align:center;padding:8px 14px calc(26
         </div>
         <div class="series-toggle">
           <button class="w on" id="tgW"><span class="sw" style="background:#0e9f8a"></span>体重</button>
+          <button class="ma on" id="tgMA"><span class="sw" style="background:#a06cc9"></span>7日均线</button>
           <button class="b on" id="tgB"><span class="sw" style="background:#f08c2e"></span>BMI</button>
         </div>
       </div>
@@ -502,7 +530,7 @@ footer{font-size:.74rem;color:#93a5a2;text-align:center;padding:8px 14px calc(26
         <div class="chart-tip" id="chartTip"></div>
       </div>
       <div class="empty" id="chartEmpty" style="display:none"></div>
-      <p class="chart-note"><span class="legend-band"></span>绿色底带为 BMI 正常范围 18.5–24（中国成人标准 WS/T 428-2013）。触摸或悬停曲线可查看数值。</p>
+      <p class="chart-note"><span class="legend-band"></span>绿色底带为 BMI 正常范围 18.5–24（中国成人标准 WS/T 428-2013）。紫色虚线为体重 7 天移动平均，平滑水分波动，看真实趋势更准。触摸或悬停曲线可查看数值。</p>
     </div>
   </section>
 
@@ -612,7 +640,7 @@ footer{font-size:.74rem;color:#93a5a2;text-align:center;padding:8px 14px calc(26
 </template>
 <template id="tplMealSec">
   <div class="meal-sec">
-    <div class="meal-head"><span class="name"><span class="dot"></span><span class="t"></span></span><span class="sum"></span></div>
+    <div class="meal-head"><span class="name"><span class="dot"></span><span class="t"></span></span><span class="sum"></span><button class="btn ghost small tpl-save">存为模板</button></div>
     <div class="items"></div>
     <div class="meal-empty">暂未记录</div>
   </div>
@@ -674,8 +702,8 @@ var MEALS = [
   { key:'snack', label:'加餐', color:'#a06cc9' }
 ];
 function defaultState(){
-  return { heightCm:null, targetKcal:2000, goalKg:60, age:null, sex:'', activityFactor:1.2, apiKey:'', model:'qwen-plus', searchEnabled:false, weights:[], meals:[], activities:[],
-    macroTargets:{ protein:75, fat:55, carb:275 } };
+  return { heightCm:null, targetKcal:2000, goalKg:60, age:null, sex:'', activityFactor:1.2, apiKey:'', model:'qwen-plus', searchEnabled:false, weights:[], meals:[], activities:[], templates:[],
+    calibFactor:1, calibMeta:null, macroTargets:{ protein:75, fat:55, carb:275 } };
 }
 function normMacros(t){
   var d = { protein:75, fat:55, carb:275 };
@@ -703,6 +731,9 @@ try{
       state.weights = Array.isArray(parsed.weights) ? parsed.weights.filter(function(w){ return w && typeof w.date === 'string' && typeof w.kg === 'number'; }) : [];
       state.meals = Array.isArray(parsed.meals) ? parsed.meals.filter(function(m){ return m && typeof m.date === 'string' && typeof m.kcal === 'number' && typeof m.name === 'string'; }) : [];
       state.activities = Array.isArray(parsed.activities) ? parsed.activities.filter(function(a){ return a && typeof a.date === 'string' && typeof a.kcal === 'number' && typeof a.name === 'string'; }) : [];
+      state.templates = Array.isArray(parsed.templates) ? parsed.templates.filter(function(t){ return t && typeof t.name === 'string' && Array.isArray(t.items); }) : [];
+      state.calibFactor = typeof parsed.calibFactor === 'number' && parsed.calibFactor >= 0.7 && parsed.calibFactor <= 1.4 ? parsed.calibFactor : 1;
+      state.calibMeta = parsed.calibMeta && typeof parsed.calibMeta === 'object' ? parsed.calibMeta : null;
       state.macroTargets = normMacros(parsed.macroTargets);
     }
   }
@@ -711,7 +742,7 @@ function save(){
   try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
   catch(e){ toast('保存失败：浏览器存储不可用'); }
 }
-var ui = { dietDate: todayStr(), actDate: todayStr(), ebDate: todayStr(), range:'30', showW:true, showB:true };
+var ui = { dietDate: todayStr(), actDate: todayStr(), ebDate: todayStr(), range:'30', showW:true, showB:true, showMA:true };
 /* SECTION: bmi */
 function bmiOf(kg){
   if(!state.heightCm || state.heightCm <= 0) return null;
@@ -743,8 +774,9 @@ function energyOfDay(date){
   if(bmr === null) return { ready:false, kg:kg, intake:intake, act:act };
   var factor = state.activityFactor || 1.2;
   var base = bmr * factor;
-  var total = base + act;
-  return { ready:true, kg:kg, bmr:bmr, factor:factor, base:base, act:act, total:total, intake:intake, deficit:total - intake };
+  var k = state.calibFactor || 1;
+  var total = (base + act) * k;
+  return { ready:true, kg:kg, bmr:bmr, factor:factor, base:base, act:act, k:k, total:total, intake:intake, deficit:total - intake };
 }
 function renderEnergyCard(){
   var eb = energyOfDay(ui.ebDate);
@@ -782,10 +814,118 @@ function renderEnergyCard(){
     c.appendChild(h('b', null, p[1] + ' 千卡'));
     chips.appendChild(c);
   });
-  hint.textContent = '缺口 = 总消耗 − 摄入。总消耗 = 基础代谢（Mifflin-St Jeor 公式，按年龄/性别/身高/体重）× 日常系数 + 活动记录。减重建议每日缺口 300–500 千卡、不超过 1000，摄入不宜长期低于基础代谢。估算仅供参考。';
+  if(eb.k && eb.k !== 1){
+    var ck = h('span', 'meal-chip');
+    ck.appendChild(document.createTextNode('已校准 '));
+    ck.appendChild(h('b', null, '×' + eb.k.toFixed(2)));
+    chips.appendChild(ck);
+  }
+  hint.textContent = '缺口 = 总消耗 − 摄入。总消耗 = 基础代谢（Mifflin-St Jeor 公式，按年龄/性别/身高/体重）× 日常系数 + 活动记录' + (eb.k !== 1 ? '，再乘以代谢校准系数' : '') + '。减重建议每日缺口 300–500 千卡、不超过 1000，摄入不宜长期低于基础代谢。估算仅供参考。';
 }
 $('#ebPrev').addEventListener('click', function(){ ui.ebDate = shiftDate(ui.ebDate, -1); renderEnergyCard(); });
 $('#ebNext').addEventListener('click', function(){ ui.ebDate = shiftDate(ui.ebDate, 1); renderEnergyCard(); });
+/* SECTION: metabolic-calibration */
+function diffDays(a, b){
+  var pa = a.split('-'), pb = b.split('-');
+  return Math.round((new Date(+pb[0], +pb[1] - 1, +pb[2]) - new Date(+pa[0], +pa[1] - 1, +pa[2])) / 86400000);
+}
+function computeCalibration(){
+  var ws = sortedWeights();
+  if(ws.length < 2) return { ok:false, reason:'体重记录不足：至少 2 条且跨度 ≥14 天' };
+  var endDate = ws[ws.length - 1].date;
+  var startDate = shiftDate(endDate, -27);
+  var winW = ws.filter(function(w){ return w.date >= startDate && w.date <= endDate; });
+  if(winW.length < 2) return { ok:false, reason:'近 28 天内体重记录不足' };
+  var span = diffDays(winW[0].date, endDate);
+  if(span < 14) return { ok:false, reason:'近 28 天体重跨度不足 14 天，继续记录再来校准' };
+  var bmr = bmrOf(winW[winW.length - 1].kg, state.heightCm, state.age, state.sex);
+  if(bmr === null) return { ok:false, reason:'请先在「设置」填写年龄、性别和身高' };
+  function maAt(date){
+    var win = ws.filter(function(w){ return w.date <= date && w.date >= shiftDate(date, -6); });
+    return win.reduce(function(s,w){ return s + w.kg; }, 0) / win.length;
+  }
+  var wStart = maAt(winW[0].date);
+  var wEnd = maAt(endDate);
+  var delta = wStart - wEnd;
+  var dayIntake = {};
+  state.meals.forEach(function(m){
+    if(m.date >= startDate && m.date <= endDate) dayIntake[m.date] = (dayIntake[m.date] || 0) + m.kcal;
+  });
+  var dates = Object.keys(dayIntake);
+  if(dates.length < 10) return { ok:false, reason:'近 28 天饮食记录不足 10 天（当前 ' + dates.length + ' 天），先坚持记录' };
+  var avgIntake = dates.reduce(function(s,d){ return s + dayIntake[d]; }, 0) / dates.length;
+  var days = span + 1;
+  var actTotal = state.activities.filter(function(a){ return a.date >= winW[0].date && a.date <= endDate; }).reduce(function(s,a){ return s + a.kcal; }, 0);
+  var actualTdee = avgIntake + delta * 7700 / days;
+  var estTdee = bmr * (state.activityFactor || 1.2) + actTotal / days;
+  if(!(estTdee > 0)) return { ok:false, reason:'估算消耗异常，请检查身体信息' };
+  var raw = actualTdee / estTdee;
+  var k = clampNum(raw, 0.7, 1.4);
+  return { ok:true, start:winW[0].date, end:endDate, days:days, recordedDays:dates.length,
+    avgIntake:avgIntake, wStart:wStart, wEnd:wEnd, delta:delta,
+    actualTdee:actualTdee, estTdee:estTdee, factor:k, clamped:Math.abs(raw - k) > 0.001 };
+}
+function renderCalib(){
+  var badge = $('#calibBadge');
+  var meta = state.calibMeta;
+  if(state.calibFactor && state.calibFactor !== 1 && meta){
+    badge.textContent = '已校准 ×' + state.calibFactor.toFixed(2);
+    badge.classList.remove('off');
+    $('#calibStatus').textContent = '校准于 ' + meta.date + '：窗口 ' + meta.start + ' ~ ' + meta.end + '，反推实际消耗约 ' + Math.round(meta.actualTdee) + ' 千卡/天。数据积累更多后可重新计算。';
+    $('#btnCalibClear').style.display = '';
+  }else{
+    badge.textContent = '未校准';
+    badge.classList.add('off');
+    $('#calibStatus').textContent = '当前按公式估算。坚持记录体重和饮食满两周后，点「计算校准」用真实数据修正。';
+    $('#btnCalibClear').style.display = 'none';
+  }
+}
+var calibPending = null;
+$('#btnCalibCalc').addEventListener('click', function(){
+  var r = computeCalibration();
+  var detail = $('#calibDetail');
+  if(!r.ok){
+    detail.style.display = 'none'; calibPending = null;
+    $('#calibStatus').textContent = r.reason;
+    toast(r.reason);
+    return;
+  }
+  calibPending = r;
+  var chips = $('#calibChips'); chips.textContent = '';
+  var parts = [
+    ['窗口', r.start.slice(5) + '~' + r.end.slice(5) + '（' + r.days + '天）'],
+    ['饮食记录', r.recordedDays + ' 天'],
+    ['平均摄入', Math.round(r.avgIntake) + ' 千卡/天'],
+    ['体重变化', (r.delta > 0 ? '-' : '+') + Math.abs(r.delta).toFixed(1) + ' kg'],
+    ['反推实际消耗', Math.round(r.actualTdee) + ' 千卡/天'],
+    ['公式估算', Math.round(r.estTdee) + ' 千卡/天'],
+    ['校准系数', '×' + r.factor.toFixed(2)]
+  ];
+  parts.forEach(function(p){
+    var c = h('span', 'meal-chip');
+    c.appendChild(document.createTextNode(p[0] + ' '));
+    c.appendChild(h('b', null, p[1]));
+    chips.appendChild(c);
+  });
+  $('#calibNote').textContent = '系数 = 反推实际消耗 ÷ 公式估算，应用后总消耗和缺口按此修正。' + (r.clamped ? '原始比值超出合理范围，已限制在 0.7–1.4 之间。' : '') + '早期减重含水分，记录满 4 周后校准更稳。';
+  detail.style.display = 'block';
+});
+$('#btnCalibApply').addEventListener('click', function(){
+  if(!calibPending) return;
+  var r = calibPending;
+  state.calibFactor = r.factor;
+  state.calibMeta = { date:todayStr(), start:r.start, end:r.end, actualTdee:r.actualTdee, estTdee:r.estTdee, factor:r.factor };
+  calibPending = null;
+  $('#calibDetail').style.display = 'none';
+  save(); renderEnergyCard(); renderCalib();
+  toast('已应用校准 ×' + r.factor.toFixed(2));
+});
+$('#btnCalibClear').addEventListener('click', function(){
+  if(!confirm('清除校准，恢复纯公式估算？')) return;
+  state.calibFactor = 1; state.calibMeta = null;
+  save(); renderEnergyCard(); renderCalib();
+  toast('已清除校准');
+});
 /* SECTION: tabs */
 var tabBtns = document.querySelectorAll('#tabs .tab');
 tabBtns.forEach(function(btn){
@@ -842,6 +982,7 @@ function renderWeight(){
   });
   renderCountdown();
   renderEnergyCard();
+  renderCalib();
 }
 /* SECTION: countdown */
 function renderCountdown(){
@@ -950,6 +1091,9 @@ function renderDiet(){
     var list = items.filter(function(x){ return x.meal === m.key; });
     node.querySelector('.sum').textContent = list.length ? (Math.round(mealSum(ui.dietDate, m.key)) + ' 千卡') : '';
     node.querySelector('.meal-empty').style.display = list.length ? 'none' : 'block';
+    var ts = node.querySelector('.tpl-save');
+    ts.dataset.meal = m.key;
+    ts.style.display = list.length ? '' : 'none';
     var itemsBox = node.querySelector('.items');
     list.forEach(function(it){
       var n2 = clone('tplMealItem');
@@ -966,6 +1110,7 @@ function renderDiet(){
   });
   renderRings();
   renderEnergyCard();
+  renderTemplates();
 }
 /* SECTION: macro-rings */
 function macroTotalsOf(date){
@@ -1072,10 +1217,71 @@ $('#btnAddAct').addEventListener('click', function(){
   toast('已记录 ' + name + ' ' + Math.round(kcal) + ' 千卡');
 });
 $('#mealSections').addEventListener('click', function(e){
+  var saveBtn = e.target.closest('.tpl-save');
+  if(saveBtn){
+    var key = saveBtn.dataset.meal;
+    var items = mealsOf(ui.dietDate).filter(function(m){ return m.meal === key; });
+    if(!items.length) return;
+    var label = MEALS.find(function(m){ return m.key === key; }).label;
+    var name = prompt('给这餐起个模板名', '我的' + label);
+    if(name === null) return;
+    name = name.trim() || ('我的' + label);
+    state.templates.push({ id:uid(), name:name, meal:key, items:items.map(function(m){ return { name:m.name, kcal:m.kcal, protein:m.protein || 0, fat:m.fat || 0, carb:m.carb || 0 }; }) });
+    save(); renderTemplates(); toast('已存为模板「' + name + '」');
+    return;
+  }
   var btn = e.target.closest('.del');
   if(!btn) return;
   state.meals = state.meals.filter(function(m){ return m.id !== btn.dataset.id; });
   save(); renderDiet(); toast('已删除');
+});
+/* SECTION: meal-templates */
+function renderTemplates(){
+  var box = $('#tplList'); box.textContent = '';
+  $('#tplCount').textContent = state.templates.length + ' 个';
+  $('#tplEmpty').style.display = state.templates.length ? 'none' : 'block';
+  state.templates.forEach(function(t){
+    var row = h('div', 'rec');
+    var main = h('span', 'main');
+    var nm = h('span', 'kg', t.name); nm.style.fontSize = '.92rem'; nm.style.fontWeight = '600';
+    main.appendChild(nm);
+    var kcal = t.items.reduce(function(s,x){ return s + (x.kcal || 0); }, 0);
+    var ml = MEALS.find(function(m){ return m.key === t.meal; });
+    main.appendChild(h('span', 'bmi', (ml ? ml.label : '') + ' · ' + t.items.length + ' 项 · ' + Math.round(kcal) + ' 千卡'));
+    row.appendChild(main);
+    var use = h('button', 'btn ghost small tpl-use', '记入'); use.dataset.id = t.id;
+    row.appendChild(use);
+    var del = h('button', 'del', '×'); del.title = '删除'; del.dataset.id = t.id;
+    row.appendChild(del);
+    box.appendChild(row);
+  });
+}
+$('#tplList').addEventListener('click', function(e){
+  var use = e.target.closest('.tpl-use');
+  if(use){
+    var t = state.templates.find(function(x){ return x.id === use.dataset.id; });
+    if(!t) return;
+    t.items.forEach(function(x){
+      state.meals.push({ id:uid(), date:ui.dietDate, meal:t.meal, name:x.name, kcal:x.kcal, protein:x.protein || 0, fat:x.fat || 0, carb:x.carb || 0 });
+    });
+    save(); renderDiet(); toast('已记入「' + t.name + '」');
+    return;
+  }
+  var del = e.target.closest('.del');
+  if(!del) return;
+  if(!confirm('删除这个常用餐模板？')) return;
+  state.templates = state.templates.filter(function(x){ return x.id !== del.dataset.id; });
+  save(); renderTemplates(); toast('已删除');
+});
+$('#btnCopyYesterday').addEventListener('click', function(){
+  var src = shiftDate(ui.dietDate, -1);
+  var items = mealsOf(src);
+  if(!items.length){ toast('前一天没有饮食记录'); return; }
+  if(!confirm('把 ' + mdLabel(src) + ' 的 ' + items.length + ' 条饮食记录复制到当前日期？')) return;
+  items.forEach(function(m){
+    state.meals.push({ id:uid(), date:ui.dietDate, meal:m.meal, name:m.name, kcal:m.kcal, protein:m.protein || 0, fat:m.fat || 0, carb:m.carb || 0 });
+  });
+  save(); renderDiet(); toast('已复制 ' + items.length + ' 条记录');
 });
 function setDietDate(d){ ui.dietDate = d; renderDiet(); }
 $('#btnPrevDay').addEventListener('click', function(){ setDietDate(shiftDate(ui.dietDate, -1)); });
@@ -1450,7 +1656,15 @@ function drawChart(){
   var xs = data.map(function(_, i){ return n === 1 ? padL + plotW / 2 : padL + i * plotW / (n - 1); });
   var wVals = data.map(function(d){ return d.kg; });
   var bVals = hasH ? data.map(function(d){ return bmiOf(d.kg); }) : [];
-  var wScale = scaleOf(wVals);
+  var allW = sortedWeights();
+  var maVals = data.map(function(d){
+    var win = allW.filter(function(w){ return w.date <= d.date && w.date >= shiftDate(d.date, -6); });
+    if(!win.length) return d.kg;
+    return win.reduce(function(s,w){ return s + w.kg; }, 0) / win.length;
+  });
+  var showMA = ui.showMA && showW;
+  $('#tgMA').classList.toggle('on', ui.showMA);
+  var wScale = scaleOf(showMA ? wVals.concat(maVals) : wVals);
   var bScale = hasH ? scaleOf(bVals) : null;
   var leftIsW = showW;
   var leftScale = leftIsW ? wScale : bScale;
@@ -1507,6 +1721,10 @@ function drawChart(){
     });
   }
   if(showB) addSeries(bVals, showW ? yR : yL, '#f08c2e');
+  if(showMA && n > 1){
+    var maPts = maVals.map(function(v, i){ return xs[i] + ',' + yL(v); }).join(' ');
+    svg.appendChild(svgEl('polyline', { points:maPts, fill:'none', stroke:'#a06cc9', 'stroke-width':2, 'stroke-dasharray':'6 4', 'stroke-linecap':'round' }));
+  }
   if(showW) addSeries(wVals, yL, '#0e9f8a');
   /* 悬停引导线与命中区 */
   var guide = svgEl('line', { x1:0, x2:0, y1:padT, y2:padT + plotH, stroke:'#b9c9c6', 'stroke-width':1, 'stroke-dasharray':'3 3', visibility:'hidden' });
@@ -1514,7 +1732,7 @@ function drawChart(){
   var hit = svgEl('rect', { x:padL - 10, y:padT, width:plotW + 20, height:plotH, fill:'transparent' });
   svg.appendChild(hit);
   box.insertBefore(svg, tip);
-  chartGeom = { data:data, xs:xs, W:W, padL:padL, plotW:plotW, n:n, guide:guide, svg:svg, hasH:hasH };
+  chartGeom = { data:data, xs:xs, W:W, padL:padL, plotW:plotW, n:n, guide:guide, svg:svg, hasH:hasH, maVals:maVals, showMA:showMA };
 }
 function chartPointer(evt){
   if(!chartGeom) return;
@@ -1535,6 +1753,9 @@ function chartPointer(evt){
   tip.textContent = '';
   tip.appendChild(h('div', 'd', d.date));
   tip.appendChild(h('div', null, '体重 ' + d.kg.toFixed(1) + ' kg'));
+  if(g.showMA && g.maVals){
+    tip.appendChild(h('div', null, '7日均线 ' + g.maVals[idx].toFixed(1) + ' kg'));
+  }
   if(g.hasH){
     var b = bmiOf(d.kg);
     tip.appendChild(h('div', null, 'BMI ' + b.toFixed(1) + ' · ' + bmiCat(b).label));
@@ -1563,6 +1784,7 @@ $('#rangeSeg').addEventListener('click', function(e){
   drawChart();
 });
 $('#tgW').addEventListener('click', function(){ ui.showW = !ui.showW; drawChart(); });
+$('#tgMA').addEventListener('click', function(){ ui.showMA = !ui.showMA; drawChart(); });
 $('#tgB').addEventListener('click', function(){
   if(!state.heightCm){ toast('请先在「体重」或「设置」页填写身高'); return; }
   ui.showB = !ui.showB; drawChart();
@@ -1674,6 +1896,10 @@ $('#fileImport').addEventListener('change', function(){
           protein:+m.protein || 0, fat:+m.fat || 0, carb:+m.carb || 0 }; });
       state.activities = Array.isArray(obj.activities) ? obj.activities.filter(function(a){ return a && typeof a.date === 'string' && typeof a.kcal === 'number' && typeof a.name === 'string'; })
         .map(function(a){ return { id:a.id || uid(), date:a.date, name:a.name, minutes:+a.minutes || 0, kcal:a.kcal }; }) : [];
+      state.templates = Array.isArray(obj.templates) ? obj.templates.filter(function(t){ return t && typeof t.name === 'string' && Array.isArray(t.items); })
+        .map(function(t){ return { id:t.id || uid(), name:t.name, meal:t.meal || 'breakfast', items:t.items }; }) : [];
+      state.calibFactor = typeof obj.calibFactor === 'number' && obj.calibFactor >= 0.7 && obj.calibFactor <= 1.4 ? obj.calibFactor : 1;
+      state.calibMeta = obj.calibMeta && typeof obj.calibMeta === 'object' ? obj.calibMeta : null;
       state.macroTargets = normMacros(obj.macroTargets);
       save(); renderWeight(); renderDiet(); renderActivity(); drawChart(); fillSettings(); refreshAiBadge();
       $('#inHeight').value = state.heightCm || '';
